@@ -1,0 +1,14 @@
+{
+  "name": "actions-runner-dashboard",
+  "version": "1.0.0",
+  "description": "Terminal dashboard for several self-hosted GitHub Actions runners on one Windows machine",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node dashboard/index.mjs",
+    "status": "bash runners.sh status",
+    "watch": "bash runners.sh watch"
+  }
+}

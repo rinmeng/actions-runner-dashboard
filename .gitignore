@@ -1,0 +1,9 @@
+node_modules/
+*.log
+
+# Never commit anything from a runner install: .runner, .credentials* and .env hold secrets.
+.runner
+.credentials*
+.env
+_diag/
+_work/
