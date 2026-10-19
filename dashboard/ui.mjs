@@ -69,7 +69,7 @@ function jobSummary(runner, { long }) {
     const actor = job.actor ? ` ${bold(`@${job.actor}`)}` : '';
     return `${mark}${actor} ${job.workflow || job.name}`;
   }
-  const who = job.actor ? ` ${bold(`@${job.actor}`)} ${prLink(runner, job)}` : '';
+  const who = job.actor ? ` ${bold(`@${job.actor}`)} ${prLink(job)}` : '';
   const workflow = job.workflow ? `${job.workflow} › ` : '';
   const time = runner.job ? `  ${dim(elapsed(job.startedAt))}` : '';
   return `${mark} ${workflow}${bold(job.name)}${who}${time}`;

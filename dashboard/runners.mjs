@@ -123,6 +123,8 @@ function parseJobContext(text) {
     event,
     pr: event === 'pull_request' ? Number.parseInt(values.number, 10) || null : null,
     workflow: values.workflow ?? '',
+    // From the job rather than .runner, which holds an org URL for org-level runners.
+    repoUrl: `${values.server_url ?? 'https://github.com'}/${values.repository}`,
   };
 }
 
@@ -147,8 +149,8 @@ async function waitForJobContext(runner) {
   return null;
 }
 
-export const prLink = (runner, job) =>
-  job.pr ? link(`${runner.repoUrl}/pull/${job.pr}`, `PR #${job.pr}`) : job.event;
+export const prLink = (job) =>
+  job.pr ? link(`${job.repoUrl}/pull/${job.pr}`, `PR #${job.pr}`) : job.event;
 
 // Rewrites "<time>: Running job: X" into "<time> @user (PR #n) requested: Workflow › X".
 async function describeJob(runner, job, entry, timestamp) {
@@ -156,7 +158,7 @@ async function describeJob(runner, job, entry, timestamp) {
   if (!context) return;
   Object.assign(job, context);
   if (runner.last && runner.last.startedAt === job.startedAt) Object.assign(runner.last, context);
-  entry.text = `${timestamp} ${bold(`@${job.actor}`)} (${prLink(runner, job)}) requested: ${job.workflow} › ${bold(job.name)}`;
+  entry.text = `${timestamp} ${bold(`@${job.actor}`)} (${prLink(job)}) requested: ${job.workflow} › ${bold(job.name)}`;
   if (plain) process.stdout.write(`${tag(runner)} ${entry.text}${RESET}\n`);
   scheduleRender();
 }
@@ -286,11 +288,26 @@ function finishIfStopped() {
   process.exit(0);
 }
 
-export function listenersAlreadyRunning() {
+// Labels of our runners that already have a listener running, from an earlier
+// session still shutting down or started some other way. Listeners of unrelated
+// runners (e.g. one installed as a service elsewhere) are ignored, unless Windows
+// won't say where a listener runs from: then it might be ours.
+export function runnersAlreadyRunning() {
   const result = spawnSync(
-    join(system32, 'tasklist.exe'),
-    ['/FI', 'IMAGENAME eq Runner.Listener.exe', '/NH'],
-    { encoding: 'utf8' },
+    join(system32, 'WindowsPowerShell/v1.0/powershell.exe'),
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      "Get-Process Runner.Listener -ErrorAction SilentlyContinue | ForEach-Object { if ($_.Path) { $_.Path } else { '?' } }",
+    ],
+    { encoding: 'utf8', windowsHide: true },
   );
-  return (result.stdout ?? '').includes('Runner.Listener.exe');
+  const paths = (result.stdout ?? '').split(/\r?\n/).map((path) => path.trim().toLowerCase()).filter(Boolean);
+  const labels = runners
+    .filter((runner) => paths.includes(join(runner.dir, 'bin', 'Runner.Listener.exe').toLowerCase()))
+    .map((runner) => runner.label);
+  const unknown = paths.filter((path) => path === '?').length;
+  if (unknown) labels.push(`${unknown} listener(s) whose folder Windows won't reveal`);
+  return labels;
 }

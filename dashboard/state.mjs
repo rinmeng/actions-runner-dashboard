@@ -28,7 +28,7 @@ function findRunners() {
     .map(({ entry, match }) => {
       const dir = join(home, entry.name);
       const config = JSON.parse(readFileSync(join(dir, '.runner'), 'utf8').replace(/^\uFEFF/, ''));
-      return { number: Number(match[1] ?? 1), dir, name: config.agentName, repoUrl: config.gitHubUrl };
+      return { number: Number(match[1] ?? 1), dir, name: config.agentName };
     })
     .sort((a, b) => a.number - b.number);
 }
