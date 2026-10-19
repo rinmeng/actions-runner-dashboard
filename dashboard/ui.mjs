@@ -53,14 +53,9 @@ const HELP = [
   ' q quit (again to force)',
 ];
 
-const elapsed = (since) => {
-  const seconds = Math.floor((Date.now() - since) / 1000);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-};
-
 // "42s", or "3m 05s" past a minute.
 function duration(ms) {
-  const seconds = Math.round(ms / 1000);
+  const seconds = Math.floor(ms / 1000);
   return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`;
 }
 
@@ -71,15 +66,19 @@ function jobSummary(runner, { long }) {
   const job = runner.job ?? runner.last;
   if (!job) return dim(runner.status === 'idle' ? 'waiting for a job' : '');
   const mark = runner.job ? yellow('▶') : (RESULT_MARK[job.result] ?? dim(job.result ?? ''));
+  // A running job counts up ("(42s)"), a finished one says how long it took ("(done in 42s)").
   // Unknown when the job started before the dashboard did.
-  const took = !runner.job && job.startedAt ? dim(` in ${duration(job.finishedAt - job.startedAt)}`) : '';
+  const time = !job.startedAt
+    ? ''
+    : runner.job
+      ? dim(` (${duration(Date.now() - job.startedAt)})`)
+      : dim(` (done in ${duration(job.finishedAt - job.startedAt)})`);
   if (!long) {
     const actor = job.actor ? ` ${bold(`@${job.actor}`)}` : '';
-    return `${mark}${actor} ${job.workflow || job.name}${took}`;
+    return `${mark}${actor} ${job.workflow || job.name}${time}`;
   }
   const who = job.actor ? ` ${bold(`@${job.actor}`)} ${prLink(job)}` : '';
   const workflow = job.workflow ? `${job.workflow} › ` : '';
-  const time = runner.job ? `  ${dim(elapsed(job.startedAt))}` : took;
   return `${mark} ${workflow}${bold(job.name)}${who}${time}`;
 }
 
