@@ -61,10 +61,14 @@ function duration(ms) {
 
 const RESULT_MARK = { Succeeded: green('✓'), Failed: red('✗'), Canceled: dim('⊘') };
 
-// One-line summary of a runner's current or last job.
+// Summary of a runner's current or last job: one line for the header, or for
+// the sidebar a list of lines, the actor with the workflow branching off it.
 function jobSummary(runner, { long }) {
   const job = runner.job ?? runner.last;
-  if (!job) return dim(runner.status === 'idle' ? 'waiting for a job' : '');
+  if (!job) {
+    const waiting = dim(runner.status === 'idle' ? 'waiting for a job' : '');
+    return long ? waiting : [waiting];
+  }
   const mark = runner.job ? yellow('▶') : (RESULT_MARK[job.result] ?? dim(job.result ?? ''));
   // A running job counts up ("(42s)"), a finished one says how long it took ("(done in 42s)").
   // Unknown when the job started before the dashboard did.
@@ -74,8 +78,8 @@ function jobSummary(runner, { long }) {
       ? dim(` (${duration(Date.now() - job.startedAt)})`)
       : dim(` (done in ${duration(job.finishedAt - job.startedAt)})`);
   if (!long) {
-    const actor = job.actor ? ` ${bold(`@${job.actor}`)}` : '';
-    return `${mark}${actor} ${job.workflow || job.name}${time}`;
+    const workflow = `${mark} ${job.workflow || job.name}${time}`;
+    return job.actor ? [bold(`@${job.actor}`), `${dim('└')} ${workflow}`] : [workflow];
   }
   const who = job.actor ? ` ${bold(`@${job.actor}`)} ${prLink(job)}` : '';
   const workflow = job.workflow ? `${job.workflow} › ` : '';
@@ -132,7 +136,7 @@ function sidebarRows(height) {
     const status = style(runner.status);
     const gap = SIDEBAR_WIDTH - 1 - stripAnsi(name).length - runner.status.length;
     rows.push(item(index, ` ${name}${' '.repeat(Math.max(1, gap))}${status}`));
-    rows.push({ text: `     ${jobSummary(runner, { long: false })}`, view: index });
+    for (const line of jobSummary(runner, { long: false })) rows.push({ text: `     ${line}`, view: index });
     rows.push({ text: '' });
   });
 
