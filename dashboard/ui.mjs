@@ -58,6 +58,12 @@ const elapsed = (since) => {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 };
 
+// "42s", or "3m 05s" past a minute.
+function duration(ms) {
+  const seconds = Math.round(ms / 1000);
+  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`;
+}
+
 const RESULT_MARK = { Succeeded: green('✓'), Failed: red('✗'), Canceled: dim('⊘') };
 
 // One-line summary of a runner's current or last job.
@@ -65,13 +71,15 @@ function jobSummary(runner, { long }) {
   const job = runner.job ?? runner.last;
   if (!job) return dim(runner.status === 'idle' ? 'waiting for a job' : '');
   const mark = runner.job ? yellow('▶') : (RESULT_MARK[job.result] ?? dim(job.result ?? ''));
+  // Unknown when the job started before the dashboard did.
+  const took = !runner.job && job.startedAt ? dim(` in ${duration(job.finishedAt - job.startedAt)}`) : '';
   if (!long) {
     const actor = job.actor ? ` ${bold(`@${job.actor}`)}` : '';
-    return `${mark}${actor} ${job.workflow || job.name}`;
+    return `${mark}${actor} ${job.workflow || job.name}${took}`;
   }
   const who = job.actor ? ` ${bold(`@${job.actor}`)} ${prLink(job)}` : '';
   const workflow = job.workflow ? `${job.workflow} › ` : '';
-  const time = runner.job ? `  ${dim(elapsed(job.startedAt))}` : '';
+  const time = runner.job ? `  ${dim(elapsed(job.startedAt))}` : took;
   return `${mark} ${workflow}${bold(job.name)}${who}${time}`;
 }
 
@@ -80,11 +88,11 @@ const gigabytes = (bytes) => `${(bytes / GB).toFixed(1)} GB`;
 const percent = (value) => `${Math.round(value)}%`;
 // Columns: label, then total / used / runners, right-aligned.
 const usageRow = (label, total, used, runnersUsed) =>
-  ` ${label.padEnd(5)}${total.padStart(9)}${used.padStart(9)}${yellow(runnersUsed.padStart(9))}`;
+  ` ${label.padEnd(6)}${total.padStart(11)}${used.padStart(11)}${yellow(runnersUsed.padStart(11))}`;
 
 function usageRows() {
   const usage = state.usage;
-  const header = { text: dim(` ${'System'.padEnd(5)}${'total'.padStart(8)}${'used'.padStart(9)}${'runners'.padStart(9)}`) };
+  const header = { text: bold(` ${'System'.padEnd(6)}${'total'.padStart(11)}${'used'.padStart(11)}${'runners'.padStart(11)}`) };
   if (!usage) return [header, { text: dim(' sampling…') }];
   const { cpu, ram, gpu } = usage;
   const { peak } = state;
@@ -94,8 +102,8 @@ function usageRows() {
     { text: usageRow('RAM', gigabytes(ram.total), gigabytes(ram.used), gigabytes(ram.runners)) },
     { text: usageRow('GPU', '', percent(gpu.used), percent(gpu.runners)) },
     { text: '' },
-    // " Max this session" is 17 columns; "used" ends at column 24 like the rows.
-    { text: dim(` Max this session${'used'.padStart(7)}${'runners'.padStart(9)}`) },
+    // " Max this session" is 17 columns; "used" ends at column 29 like the rows.
+    { text: bold(` Max this session${'used'.padStart(12)}${'runners'.padStart(11)}`) },
     { text: usageRow('CPU', '', percent(peak.cpu.used), percent(peak.cpu.runners)) },
     { text: usageRow('RAM', '', gigabytes(peak.ram.used), gigabytes(peak.ram.runners)) },
     { text: usageRow('GPU', '', percent(peak.gpu.used), percent(peak.gpu.runners)) },

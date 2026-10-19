@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 export const system32 = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32');
 export const plain = !process.stdout.isTTY || !process.stdin.isTTY;
 export const MAX_LINES = 5000;
-export const SIDEBAR_WIDTH = 34;
+export const SIDEBAR_WIDTH = 42;
 // 1-based screen column where log text starts: sidebar, border, one space.
 export const LOG_COLUMN = SIDEBAR_WIDTH + 3;
 // Rows above the log text in the right pane.
@@ -44,7 +44,7 @@ export const runners = findRunners().map((runner, index) => ({
   status: 'idle',
   child: null,
   runId: 0,
-  // The job in progress and the last finished one: { name, startedAt, actor, event, pr, workflow, result }.
+  // The job in progress and the last finished one: { name, startedAt, finishedAt, actor, event, pr, workflow, result }.
   job: null,
   last: null,
   // Newest Worker_*.log already matched to a job, so the next job waits for a newer one.

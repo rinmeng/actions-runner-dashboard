@@ -80,7 +80,7 @@ function onLine(runner, raw) {
     setStatus(runner, 'busy');
     void describeJob(runner, runner.job, entry, match[1]);
   } else if ((match = COMPLETED.exec(text))) {
-    runner.last = { ...runner.job, name: match[1], result: match[2] };
+    runner.last = { ...runner.job, name: match[1], result: match[2], finishedAt: Date.now() };
     runner.job = null;
     setStatus(runner, 'idle');
   } else if (DISCONNECTED.test(text)) {
