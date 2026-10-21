@@ -56,7 +56,7 @@ Set `RUNNERS_HOME` to keep the runners somewhere else.
 ## Setup options
 
 ```sh
-pnpm setup-runners --repo owner/repo --count 4   # or --org my-org
+pnpm setup-runners --repo owner/repo --count 4   # or --org my-org; --count defaults to 4
                    [--labels a,b]                 # extra labels (self-hosted, Windows, X64 are automatic)
                    [--name my-pc]                 # runner names: my-pc, my-pc-2, … (default: computer name)
                    [--dry-run]                    # show what would be created, change nothing
@@ -112,7 +112,7 @@ your browser (`RUNNERS_WEB_OPEN=0` to skip that). Ctrl+C stops
 every runner cleanly, as `q` does in the terminal dashboard.
 
 The site runs as its own background process, so Ctrl+C reaches only the runners and the
-page shows them stopping; it goes down when they're done. While the runners are off
+page shows them stopping; it goes down when they're done. Its output goes to `site.log`. While the runners are off
 (`pnpm site` alone), it says so, with who to ping and when they're usually on
 (`NEXT_PUBLIC_RUNNERS_OWNER` and `NEXT_PUBLIC_RUNNERS_HOURS` in `web/.env.local`; rebuild
 after changing them).
@@ -128,8 +128,15 @@ pnpm tunnel:stop      # stop the tunnel
 of the local one, and runs `cloudflared tunnel run` with your `~/.cloudflared/config.yml`
 (pointing at `http://127.0.0.1:3130`), in the background like the site, and stops it on
 exit too. It logs to `tunnel.log`; set `CLOUDFLARED` if cloudflared isn't in its default
-install folder. With the machine off the tunnel, Cloudflare shows an error; the Worker in
-`cloudflare/offline-worker.js` shows an offline page there instead (setup steps in the file).
+install folder.
+
+With the machine off, Cloudflare shows a "Host Error" at the tunnel's address. The Worker
+in `cloudflare/offline-worker.js` shows an offline page there instead, answers
+`/api/status` with `{ "online": false }`, and reloads the page once the machine is back.
+Setup steps are at the top of the file. You can paste it into the Cloudflare dashboard,
+or connect the Worker to this repo (Workers Builds, root directory `cloudflare`) so
+`cloudflare/wrangler.jsonc` deploys it on each push. Its `OWNER` and `HOURS` are set in
+the file, so keep them in step with `web/.env.local`.
 
 After changing `web/`: `pnpm site:stop`, then `pnpm web:build`, then start it again.
 Building while the site runs breaks the running site.
