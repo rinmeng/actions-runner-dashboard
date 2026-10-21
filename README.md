@@ -117,7 +117,14 @@ says they're offline, with who to ping (`NEXT_PUBLIC_RUNNERS_OWNER` in `web/.env
 ```sh
 pnpm site             # just the site, in the foreground (e.g. to start it at logon)
 pnpm site:stop        # stop the site, wherever it was started
+pnpm web:tunnel       # pnpm web, plus a Cloudflare tunnel to the site
+pnpm tunnel:stop      # stop the tunnel
 ```
+
+`web:tunnel` runs `cloudflared tunnel run` with your `~/.cloudflared/config.yml`
+(pointing at `http://127.0.0.1:3130`), in the background like the site so it stays up
+after the runners stop. It logs to `tunnel.log`; set `CLOUDFLARED` if cloudflared isn't
+in its default install folder.
 
 After changing `web/`: `pnpm site:stop`, then `pnpm web:build`, then start it again.
 Building while the site runs breaks the running site.

@@ -2,6 +2,7 @@
 //
 //   pnpm start (or `runners`)   click or ↑/↓ to pick a runner; q stops them all cleanly
 //   pnpm web (or `runners-web`) the same in the browser (web/), Ctrl+C stops them all
+//   pnpm web:tunnel             and a Cloudflare tunnel to it (dashboard/tunnel.mjs)
 //
 // No dependencies on purpose. Runners are the actions-runner, actions-runner-2, …
 // folders with a .runner config in RUNNERS_HOME (default: the folder this repo is
@@ -13,6 +14,7 @@ import { home, plain, runners, scheduleRender, setRenderer, web } from './state.
 import { restoreTerminal, setupTerminal } from './terminal.mjs';
 import { onInput, render } from './ui.mjs';
 import { startUsageSampler } from './usage.mjs';
+import { startTunnel } from './tunnel.mjs';
 import { startWeb } from './web.mjs';
 
 if (runners.length === 0) {
@@ -45,6 +47,7 @@ if (!plain || web) {
   startUsageSampler();
 }
 startApi();
-if (web) startWeb();
+if (web) void startWeb();
+if (web && process.argv.includes('--tunnel')) startTunnel();
 for (const runner of runners) start(runner);
 scheduleRender();
