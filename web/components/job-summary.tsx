@@ -1,5 +1,6 @@
 import { CircleCheck, CircleSlash, CircleX, Play } from "lucide-react"
 
+import { AnimatedNumber } from "@/components/animated-number"
 import { duration } from "@/lib/format"
 import type { Job, Runner } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -10,14 +11,17 @@ const RESULT_ICON: Record<string, React.ReactNode> = {
   Canceled: <CircleSlash className="size-3.5 text-muted-foreground" />,
 }
 
+// "42s" while running, "done in 3m 05s" after, its digits rolling as they tick.
 function jobTime(job: Job, running: boolean, now: number) {
   // Unknown when the job started before the dashboard did.
   if (!job.startedAt) return null
-  return running
-    ? duration(now - job.startedAt)
-    : job.finishedAt
-      ? `done in ${duration(job.finishedAt - job.startedAt)}`
-      : null
+  if (running) return <AnimatedNumber value={now - job.startedAt} format={duration} />
+  if (!job.finishedAt) return null
+  return (
+    <>
+      done in <AnimatedNumber value={job.finishedAt - job.startedAt} format={duration} />
+    </>
+  )
 }
 
 export function PrLink({ job }: { job: Job }) {

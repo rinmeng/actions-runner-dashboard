@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ArrowDown, SquareTerminal, WrapText } from "lucide-react"
 
+import { AnimatedNumber } from "@/components/animated-number"
 import { AnsiText } from "@/components/ansi-text"
 import { Button } from "@/components/ui/button"
 import {
@@ -89,7 +90,7 @@ export function LogView({
           {title}
         </CodeBlockTitle>
         <span className="text-xs whitespace-nowrap tabular-nums">
-          {lines.length.toLocaleString()} {lines.length === 1 ? "line" : "lines"}
+          <AnimatedNumber value={lines.length} format={(count) => count.toLocaleString()} /> {lines.length === 1 ? "line" : "lines"}
         </span>
         <CodeBlockActions>
           <Button
@@ -131,7 +132,13 @@ export function LogView({
       {!pinned && (
         <Button size="sm" variant="secondary" className="absolute right-6 bottom-4 shadow-md" onClick={jumpToBottom}>
           <ArrowDown data-icon="inline-start" />
-          {unseen > 0 ? `${unseen.toLocaleString()} new` : "Latest"}
+          {unseen > 0 ? (
+            <>
+              <AnimatedNumber value={unseen} format={(count) => count.toLocaleString()} /> new
+            </>
+          ) : (
+            "Latest"
+          )}
         </Button>
       )}
     </CodeBlock>

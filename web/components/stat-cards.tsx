@@ -21,14 +21,14 @@ function Readings({ mhz, fan }: { mhz?: number | null; fan?: number | null }) {
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
             <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
           </span>
-          <span className="font-semibold text-foreground">{clock(mhz)}</span>
+          <AnimatedNumber className="font-semibold text-foreground" value={mhz} format={clock} />
           <span className="font-normal text-muted-foreground">clock</span>
         </Badge>
       )}
       {fan != null && (
         <>
           <Fan className="ml-1 size-3" aria-label="Fan" />
-          {rpm(fan)}
+          <AnimatedNumber value={fan} format={rpm} />
         </>
       )}
     </>
@@ -153,7 +153,7 @@ function UsageCard({
       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
         <AnimatedNumber className="font-heading text-2xl font-semibold" value={used} format={format} />
         <span className="text-xs text-muted-foreground">
-          runners <span className="font-medium text-amber-600 tabular-nums dark:text-amber-400">{format(runners)}</span>
+          runners <AnimatedNumber className="font-medium text-amber-600 dark:text-amber-400" value={runners} format={format} />
         </span>
       </div>
       <UsageBar label={`${title} use`} used={toPercent(used)} segments={segments} />
@@ -164,12 +164,12 @@ function UsageCard({
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-primary" aria-hidden />
             all
-            <span className="font-semibold text-foreground">{format(maxUsed)}</span>
+            <AnimatedNumber className="font-semibold text-foreground" value={maxUsed} format={format} />
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
             runners
-            <span className="font-semibold text-amber-600 dark:text-amber-400">{format(maxRunners)}</span>
+            <AnimatedNumber className="font-semibold text-amber-600 dark:text-amber-400" value={maxRunners} format={format} />
           </span>
         </div>
       )}
@@ -206,9 +206,15 @@ function RangeCard({
           {rows.map(({ label, key, value }) => (
             <TableRow key={key} className="border-0">
               <TableCell className="px-0 py-1 text-muted-foreground">{label}</TableCell>
-              <TableCell className="px-0 py-1 text-right text-sm font-medium">{format(value)}</TableCell>
-              <TableCell className="px-0 py-1 text-right text-muted-foreground">{format(range[key]?.min)}</TableCell>
-              <TableCell className="px-0 py-1 text-right text-muted-foreground">{format(range[key]?.max)}</TableCell>
+              <TableCell className="px-0 py-1 text-right text-sm font-medium">
+                <AnimatedNumber value={value} format={format} />
+              </TableCell>
+              <TableCell className="px-0 py-1 text-right text-muted-foreground">
+                <AnimatedNumber value={range[key]?.min} format={format} />
+              </TableCell>
+              <TableCell className="px-0 py-1 text-right text-muted-foreground">
+                <AnimatedNumber value={range[key]?.max} format={format} />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -306,10 +312,13 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         </div>
         <UsageBar label="Disk space used" used={(usedDisk / usage.disk.total) * 100} />
         <p className="flex justify-between gap-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
-          <span>{percent((usedDisk / usage.disk.total) * 100)} used</span>
+          <span>
+            <AnimatedNumber value={(usedDisk / usage.disk.total) * 100} format={percent} /> used
+          </span>
           {usage.disk.read != null && (
             <span>
-              Read {speed(usage.disk.read)} · Write {speed(usage.disk.write)}
+              Read <AnimatedNumber value={usage.disk.read} format={speed} /> · Write{" "}
+              <AnimatedNumber value={usage.disk.write} format={speed} />
             </span>
           )}
         </p>

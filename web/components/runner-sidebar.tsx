@@ -2,6 +2,7 @@
 
 import { Layers, Server } from "lucide-react"
 
+import { AnimatedNumber } from "@/components/animated-number"
 import { JobSummary } from "@/components/job-summary"
 import {
   Sidebar,
@@ -49,7 +50,9 @@ export function RunnerSidebar({
           <span className="font-heading text-sm font-semibold">Actions runners</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          {count("busy")} busy · {count("idle")} idle · {runners.length} total
+          <AnimatedNumber value={count("busy")} format={String} /> busy ·{" "}
+          <AnimatedNumber value={count("idle")} format={String} /> idle ·{" "}
+          <AnimatedNumber value={runners.length} format={String} /> total
         </p>
       </SidebarHeader>
       <SidebarSeparator />

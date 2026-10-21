@@ -61,10 +61,11 @@ export function duration(ms: number) {
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`
 }
 
-// "3d 04h 12m", dropping days while under a day.
+// "3d 04h 12m 05s", dropping days while under a day.
 export function uptimeText(seconds: number) {
   const days = Math.floor(seconds / 86400)
   const hours = String(Math.floor((seconds % 86400) / 3600)).padStart(2, "0")
   const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0")
-  return days ? `${days}d ${hours}h ${minutes}m` : `${hours}h ${minutes}m`
+  const secs = String(Math.floor(seconds % 60)).padStart(2, "0")
+  return days ? `${days}d ${hours}h ${minutes}m ${secs}s` : `${hours}h ${minutes}m ${secs}s`
 }

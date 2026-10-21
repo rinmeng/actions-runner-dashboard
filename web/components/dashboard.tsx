@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { type Connection, useDashboard } from "@/hooks/use-dashboard"
+import { AnimatedNumber } from "@/components/animated-number"
 import { useNow } from "@/hooks/use-now"
 import { uptimeText } from "@/lib/format"
 import { canRestart, runnerColor, STATUS_STYLE } from "@/lib/status"
@@ -65,7 +66,7 @@ function Uptime({ uptime }: { uptime: number }) {
     <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground" title="PC uptime">
       <Clock className="size-4" />
       <span className="hidden sm:inline">PC uptime</span>
-      <span className="font-semibold text-foreground tabular-nums">{uptimeText(uptime)}</span>
+      <AnimatedNumber className="font-semibold text-foreground" value={uptime} format={uptimeText} />
     </span>
   )
 }
