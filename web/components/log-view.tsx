@@ -5,6 +5,7 @@ import { ArrowDown } from "lucide-react"
 
 import { AnsiText } from "@/components/ansi-text"
 import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { Line } from "@/lib/types"
 
 // Lines drawn at once; older ones are still in the terminal dashboard.
@@ -20,25 +21,36 @@ export function LogView({
   // In the "All runners" view, the runner's colored "[runner 2]" tag.
   tagFor?: (line: Line) => React.ReactNode
 }) {
-  const scroller = React.useRef<HTMLDivElement>(null)
+  const root = React.useRef<HTMLDivElement>(null)
+  // The element that actually scrolls, inside the ScrollArea.
+  const viewport = () => root.current?.querySelector<HTMLDivElement>("[data-slot=scroll-area-viewport]")
   const [pinned, setPinned] = React.useState(true)
   // Id of the newest line seen at the bottom; counted by id since old lines get dropped.
   const lastId = lines.at(-1)?.id ?? 0
+  const lastIdRef = React.useRef(lastId)
   const [seenId, setSeenId] = React.useState(lastId)
   const shown = lines.length > RENDER_LIMIT ? lines.slice(-RENDER_LIMIT) : lines
 
+  React.useEffect(() => {
+    lastIdRef.current = lastId
+  }, [lastId])
+
   React.useLayoutEffect(() => {
-    const element = scroller.current
+    const element = viewport()
     if (pinned && element) element.scrollTop = element.scrollHeight
   }, [lines, pinned])
 
-  const onScroll = () => {
-    const element = scroller.current
+  React.useEffect(() => {
+    const element = viewport()
     if (!element) return
-    const atBottom = element.scrollHeight - element.scrollTop - element.clientHeight < PIN_THRESHOLD
-    setPinned(atBottom)
-    if (atBottom) setSeenId(lastId)
-  }
+    const onScroll = () => {
+      const atBottom = element.scrollHeight - element.scrollTop - element.clientHeight < PIN_THRESHOLD
+      setPinned(atBottom)
+      if (atBottom) setSeenId(lastIdRef.current)
+    }
+    element.addEventListener("scroll", onScroll, { passive: true })
+    return () => element.removeEventListener("scroll", onScroll)
+  }, [])
 
   const jumpToBottom = () => {
     setPinned(true)
@@ -52,27 +64,25 @@ export function LogView({
 
   return (
     <div className="relative min-h-0 flex-1">
-      <div
-        ref={scroller}
-        onScroll={onScroll}
-        className="absolute inset-0 overflow-auto py-3 font-mono text-[12.5px] leading-5"
-      >
-        {lines.length > RENDER_LIMIT && (
-          <p className="px-4 pb-2 text-muted-foreground">
-            Showing the last {RENDER_LIMIT.toLocaleString()} lines.
-          </p>
-        )}
-        {shown.length === 0 && <p className="px-4 text-muted-foreground">No output yet.</p>}
-        {shown.map((line) => (
-          <div
-            key={line.id}
-            className="px-4 break-all whitespace-pre-wrap [contain-intrinsic-size:auto_1.25rem] [content-visibility:auto] hover:bg-muted/60"
-          >
-            {tagFor?.(line)}
-            <AnsiText segments={line.segments} />
-          </div>
-        ))}
-      </div>
+      <ScrollArea ref={root} className="absolute inset-0">
+        <div className="py-3 font-mono text-[12.5px] leading-5">
+          {lines.length > RENDER_LIMIT && (
+            <p className="px-4 pb-2 text-muted-foreground">
+              Showing the last {RENDER_LIMIT.toLocaleString()} lines.
+            </p>
+          )}
+          {shown.length === 0 && <p className="px-4 text-muted-foreground">No output yet.</p>}
+          {shown.map((line) => (
+            <div
+              key={line.id}
+              className="px-4 break-all whitespace-pre-wrap [contain-intrinsic-size:auto_1.25rem] [content-visibility:auto] hover:bg-muted/60"
+            >
+              {tagFor?.(line)}
+              <AnsiText segments={line.segments} />
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
       {!pinned && (
         <Button size="sm" variant="secondary" className="absolute right-6 bottom-4 shadow-md" onClick={jumpToBottom}>
           <ArrowDown data-icon="inline-start" />

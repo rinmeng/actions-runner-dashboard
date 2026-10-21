@@ -1,18 +1,32 @@
 import { Cpu, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { celsius, gigabytes, percent, specLines, speed } from "@/lib/format"
 import type { DashboardState } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-// A bar of the machine's use, with the runners' own share drawn over it.
-function UsageBar({ used, runners }: { used: number; runners?: number }) {
-  const clamp = (value: number) => `${Math.min(100, Math.max(0, value))}%`
+const clamp = (value: number) => Math.min(100, Math.max(0, value))
+const THIN_TRACK = "*:data-[slot=progress-track]:h-1.5"
+
+// The machine's use, with the runners' own share as a second Progress laid over it
+// (Progress takes one value): a transparent track and an amber indicator.
+function UsageBar({ used, runners, label }: { used: number; runners?: number; label: string }) {
   return (
-    <div className="relative h-1.5 overflow-hidden rounded-full bg-muted">
-      <div className="absolute inset-y-0 left-0 rounded-full bg-muted-foreground/40" style={{ width: clamp(used) }} />
+    <div className="relative">
+      <Progress value={clamp(used)} aria-label={label} className={THIN_TRACK} />
       {runners !== undefined && (
-        <div className="absolute inset-y-0 left-0 rounded-full bg-amber-500" style={{ width: clamp(runners) }} />
+        <Progress
+          value={clamp(runners)}
+          aria-label={`${label}, runners' share`}
+          className={cn(
+            "absolute inset-0",
+            THIN_TRACK,
+            "*:data-[slot=progress-track]:bg-transparent **:data-[slot=progress-indicator]:bg-amber-500"
+          )}
+        />
       )}
     </div>
   )
@@ -41,9 +55,14 @@ function StatCard({
           {hint && <span className="ml-auto text-xs text-muted-foreground">{hint}</span>}
         </div>
         {spec && (
-          <p className="w-full truncate text-xs text-muted-foreground" title={spec}>
-            {spec}
-          </p>
+          <Tooltip>
+            <TooltipTrigger
+              render={<p className="w-full cursor-default truncate text-left text-xs text-muted-foreground" />}
+            >
+              {spec}
+            </TooltipTrigger>
+            <TooltipContent>{spec}</TooltipContent>
+          </Tooltip>
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-2">{children}</CardContent>
@@ -84,7 +103,7 @@ function UsageCard({
           runners <span className="font-medium text-amber-600 tabular-nums dark:text-amber-400">{format(runners)}</span>
         </span>
       </div>
-      <UsageBar used={bar?.used ?? used} runners={bar?.runners ?? runners} />
+      <UsageBar label={`${title} use`} used={bar?.used ?? used} runners={bar?.runners ?? runners} />
       {maxUsed !== undefined && maxRunners !== undefined && (
         <p className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
           Max {format(maxUsed)} · runners {format(maxRunners)}
@@ -110,26 +129,26 @@ function RangeCard({
 }) {
   return (
     <StatCard title={title} icon={icon}>
-      <table className="w-full text-xs whitespace-nowrap tabular-nums">
-        <thead className="text-muted-foreground">
-          <tr>
-            <th className="pb-1 text-left font-normal" />
-            <th className="pb-1 text-right font-normal">now</th>
-            <th className="pb-1 text-right font-normal">min</th>
-            <th className="pb-1 text-right font-normal">max</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="text-xs tabular-nums">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="h-7 px-0" />
+            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">now</TableHead>
+            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">min</TableHead>
+            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">max</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map(({ label, key, value }) => (
-            <tr key={key}>
-              <td className="py-0.5 text-muted-foreground">{label}</td>
-              <td className="py-0.5 text-right text-sm font-medium">{format(value)}</td>
-              <td className="py-0.5 text-right text-muted-foreground">{format(range[key]?.min)}</td>
-              <td className="py-0.5 text-right text-muted-foreground">{format(range[key]?.max)}</td>
-            </tr>
+            <TableRow key={key} className="border-0">
+              <TableCell className="px-0 py-1 text-muted-foreground">{label}</TableCell>
+              <TableCell className="px-0 py-1 text-right text-sm font-medium">{format(value)}</TableCell>
+              <TableCell className="px-0 py-1 text-right text-muted-foreground">{format(range[key]?.min)}</TableCell>
+              <TableCell className="px-0 py-1 text-right text-muted-foreground">{format(range[key]?.max)}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </StatCard>
   )
 }
@@ -214,7 +233,7 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
           <span className="font-heading text-2xl font-semibold tabular-nums">{gigabytes(usage.disk.free)}</span>
           <span className="text-xs text-muted-foreground">free</span>
         </div>
-        <UsageBar used={(usedDisk / usage.disk.total) * 100} />
+        <UsageBar label="Disk space used" used={(usedDisk / usage.disk.total) * 100} />
         <p className="flex justify-between gap-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
           <span>{percent((usedDisk / usage.disk.total) * 100)} used</span>
           {usage.disk.read != null && (

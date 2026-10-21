@@ -9,9 +9,11 @@ import { JobSummary } from "@/components/job-summary"
 import { LogView } from "@/components/log-view"
 import { RunnerSidebar } from "@/components/runner-sidebar"
 import { STAT_GRID, StatCards } from "@/components/stat-cards"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -48,18 +50,20 @@ const OWNER = process.env.NEXT_PUBLIC_RUNNERS_OWNER || "the owner"
 
 function Offline() {
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <Card className="max-w-md items-center gap-3 px-8 py-10 text-center">
-        <PowerOff className="size-8 text-muted-foreground" />
-        <h2 className="font-heading text-lg font-semibold">
-          {OWNER === "the owner" ? "The runners are offline" : `${OWNER}'s runners are offline`}
-        </h2>
-        <p className="text-sm text-muted-foreground">
+    <Empty className="flex-1">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <PowerOff />
+        </EmptyMedia>
+        <EmptyTitle>{OWNER === "the owner" ? "The runners are offline" : `${OWNER}'s runners are offline`}</EmptyTitle>
+        <EmptyDescription>
           Jobs for these runners wait in GitHub&apos;s queue until they&apos;re back. Ping {OWNER} to turn them on.
-        </p>
-        <p className="text-xs text-muted-foreground">This page reconnects on its own once they&apos;re up.</p>
-      </Card>
-    </div>
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent className="text-xs text-muted-foreground">
+        This page reconnects on its own once they&apos;re up.
+      </EmptyContent>
+    </Empty>
   )
 }
 
@@ -130,10 +134,11 @@ export function Dashboard() {
         </header>
 
         {state?.quitting && (
-          <div className="flex items-center gap-2 border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-400">
-            <TriangleAlert className="size-4" />
-            Stopping: waiting for each runner to end its GitHub session.
-          </div>
+          <Alert className="mx-4 mt-4 w-auto">
+            <TriangleAlert />
+            <AlertTitle>Stopping the runners</AlertTitle>
+            <AlertDescription>Waiting for each runner to end its GitHub session.</AlertDescription>
+          </Alert>
         )}
 
         {connection === "closed" ? (

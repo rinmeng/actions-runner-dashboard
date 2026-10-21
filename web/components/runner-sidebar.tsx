@@ -3,6 +3,7 @@
 import { Clock, Layers, Server } from "lucide-react"
 
 import { JobSummary } from "@/components/job-summary"
+import { Badge } from "@/components/ui/badge"
 import {
   Sidebar,
   SidebarContent,
@@ -105,10 +106,10 @@ export function RunnerSidebar({
             PC uptime <span className="ml-auto font-medium text-foreground tabular-nums">{uptimeText(state.uptime)}</span>
           </span>
         )}
-        <span className="flex items-center gap-2">
-          <span className={cn("ml-0.5 size-2 rounded-full", CONNECTION_STYLE[connection].dot)} />
+        <Badge variant="outline" className="text-muted-foreground">
+          <span className={cn("size-1.5 rounded-full", CONNECTION_STYLE[connection].dot)} />
           {CONNECTION_STYLE[connection].label}
-        </span>
+        </Badge>
       </SidebarFooter>
     </Sidebar>
   )
