@@ -102,6 +102,8 @@ const percent = (value) => `${Math.round(value)}%`;
 const speed = (bytes) =>
   bytes < 1024 ** 2 ? `${Math.round(bytes / 1024)} KB/s` : `${(bytes / 1024 ** 2).toFixed(1)} MB/s`;
 const celsius = (value) => `${Math.round(value)}°C`;
+const clock = (mhz) => (mhz == null ? dim('—') : `${(mhz / 1000).toFixed(2)} GHz`);
+const rpm = (value) => (value == null ? dim('—') : `${Math.round(value)} rpm`);
 // padStart that ignores color codes, like padEnd.
 const padStart = (text, width) => ' '.repeat(Math.max(0, width - stripAnsi(text).length)) + text;
 // Columns: label, then total / used / runners, right-aligned.
@@ -119,6 +121,11 @@ function usageRows() {
     { text: usageRow('CPU', `${usage.threads} thr`, percent(cpu.used), percent(cpu.runners)) },
     { text: usageRow('RAM', gigabytes(ram.total), gigabytes(ram.used), gigabytes(ram.runners)) },
     { text: usageRow('GPU', '', percent(gpu.used), percent(gpu.runners)) },
+    { text: '' },
+    // Clock and fan, with LibreHardwareMonitor; values end at column 29 like "used".
+    { text: bold(` ${''.padEnd(6)}${'clock'.padStart(11)}${'fan'.padStart(11)}`) },
+    { text: ` ${'CPU'.padEnd(6)}${padStart(clock(usage.clock.cpu), 11)}${padStart(rpm(usage.fan.cpu), 11)}` },
+    { text: ` ${'GPU'.padEnd(6)}${padStart(clock(usage.clock.gpu), 11)}${padStart(rpm(usage.fan.gpu), 11)}` },
     { text: '' },
     // " Max this session" is 17 columns; "used" ends at column 29 like the rows.
     { text: bold(` Max this session${'used'.padStart(12)}${'runners'.padStart(11)}`) },

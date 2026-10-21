@@ -66,9 +66,10 @@ function busiestEngine(engines, include) {
   return Math.min(100, Math.max(0, ...totals.values()));
 }
 
-// Temperatures and network speed come from LibreHardwareMonitor's web server when it is
-// running (Ryzen CPUs report no temperature to Windows at all). Without it, the GPU
-// temperature falls back to nvidia-smi and network speed to the performance counters.
+// Temperatures, clocks, fans and network speed come from LibreHardwareMonitor's web server
+// when it is running (Ryzen CPUs report no temperature to Windows at all). Without it, the
+// GPU temperature falls back to nvidia-smi and network speed to the performance counters;
+// clocks and fans show nothing.
 const SENSORS_URL = 'http://localhost:8085/data.json';
 const RATE_UNITS = { 'B/s': 1, 'KB/s': 1024, 'MB/s': 1024 ** 2, 'GB/s': 1024 ** 3 };
 let sensors = {};
@@ -87,6 +88,8 @@ function sensorList(node, hardware = '', list = []) {
   return list;
 }
 
+const fastest = (fans) => (fans.length ? Math.max(...fans.map((fan) => fan.value)) : null);
+
 function pickSensors(list) {
   const find = (id, name) => list.find((sensor) => id.test(sensor.id) && name.test(sensor.name))?.value ?? null;
   // A sensor LibreHardwareMonitor hasn't polled yet reads 0 °C (the SSD's, for its first
@@ -103,6 +106,13 @@ function pickSensors(list) {
     gpuTemp: temp(/^\/gpu-nvidia\/.*\/temperature\//, /^GPU Core$/),
     gpuHotSpot: temp(/^\/gpu-nvidia\/.*\/temperature\//, /Hot Spot/),
     ssdTemp: temp(/^\/nvme\/.*\/temperature\//, /Composite/),
+    // MHz. "Cores (Average)", not "Effective", which also counts the time cores sleep.
+    cpuClock: find(/^\/(amd|intel)cpu\/.*\/clock\//, /^Cores \(Average\)$/),
+    gpuClock: find(/^\/gpu-nvidia\/.*\/clock\//, /^GPU Core$/),
+    // RPM of the fastest fan; the GPU's read 0 while the card is cool enough to stop them.
+    // A cooler run by its own software over USB (iCUE, CAM) isn't in the tree at all.
+    cpuFan: fastest(list.filter((sensor) => /^\/lpc\/.*\/fan\//.test(sensor.id) && /CPU|Pump/i.test(sensor.name))),
+    gpuFan: fastest(list.filter((sensor) => /^\/gpu-nvidia\/.*\/fan\//.test(sensor.id))),
     net: nics.length ? { down: rate('Download Speed'), up: rate('Upload Speed') } : null,
     diskRead: disk('Read Rate'),
     diskWrite: disk('Write Rate'),
@@ -197,6 +207,9 @@ function summarize(sample) {
     // Read and write rates are bytes per second, or null without LibreHardwareMonitor.
     disk: { ...diskSpace(), read: sensors.diskRead ?? null, write: sensors.diskWrite ?? null },
     net: sensors.net ?? { down: sample.net[0], up: sample.net[1] },
+    // MHz and RPM, or null when there is no sensor to read.
+    clock: { cpu: sensors.cpuClock ?? null, gpu: sensors.gpuClock ?? null },
+    fan: { cpu: sensors.cpuFan ?? null, gpu: sensors.gpuFan ?? null },
     // °C, or null when there is no sensor to read.
     temp: {
       cpu: sensors.cpuTemp ?? null,

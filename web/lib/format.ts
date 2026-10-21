@@ -15,6 +15,11 @@ export const speed = (bytes: number | null | undefined) =>
       ? `${Math.round(bytes / 1024)} KB/s`
       : `${(bytes / 1024 ** 2).toFixed(1)} MB/s`
 
+// "4.31 GHz", or "—" with no reading.
+export const clock = (mhz: number | null | undefined) => (mhz == null ? "—" : `${(mhz / 1000).toFixed(2)} GHz`)
+export const rpm = (value: number | null | undefined) =>
+  value == null ? "—" : `${Math.round(value).toLocaleString("en-US")} RPM`
+
 const MEMORY_TYPES: Record<number, string> = { 24: "DDR3", 26: "DDR4", 34: "DDR5" }
 const ghz = (mhz: number) => `${(mhz / 1000).toFixed(1)} GHz`
 // Joins the parts that are known; `x && "text"` parts drop out when x is missing.

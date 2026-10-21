@@ -1,12 +1,38 @@
-import { Cpu, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
+import { Cpu, Fan, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { celsius, gigabytes, percent, specLines, speed } from "@/lib/format"
+import { celsius, clock, gigabytes, percent, rpm, specLines, speed } from "@/lib/format"
 import { runnerColor } from "@/lib/status"
 import type { DashboardState, Runner, Usage } from "@/lib/types"
 import { cn } from "@/lib/utils"
+
+// A card's live readings for its title row: the clock as a badge with a pulsing dot, then
+// the fan, leaving out the ones there is no sensor for.
+function Readings({ mhz, fan }: { mhz?: number | null; fan?: number | null }) {
+  return (
+    <>
+      {mhz != null && (
+        <Badge variant="outline" className="gap-1.5 tabular-nums" aria-label={`Clock ${clock(mhz)}`}>
+          <span className="relative flex size-1.5" aria-hidden>
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+          </span>
+          <span className="font-semibold text-foreground">{clock(mhz)}</span>
+          <span className="font-normal text-muted-foreground">clock</span>
+        </Badge>
+      )}
+      {fan != null && (
+        <>
+          <Fan className="ml-1 size-3" aria-label="Fan" />
+          {rpm(fan)}
+        </>
+      )}
+    </>
+  )
+}
 
 const clamp = (value: number) => Math.min(100, Math.max(0, value))
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
@@ -54,7 +80,7 @@ function StatCard({
 }: {
   title: string
   icon: React.ComponentType<{ className?: string }>
-  hint?: string
+  hint?: React.ReactNode
   // The hardware, under the title: "AMD Ryzen 9 9900X · 12C/24T · 4.4 GHz base".
   spec?: string
   children: React.ReactNode
@@ -65,7 +91,11 @@ function StatCard({
         <div className="flex w-full items-center gap-2">
           <Icon className="size-4 text-muted-foreground" />
           <CardTitle className="text-sm">{title}</CardTitle>
-          {hint && <span className="ml-auto text-xs text-muted-foreground">{hint}</span>}
+          {hint && (
+            <span className="ml-auto flex items-center gap-1 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+              {hint}
+            </span>
+          )}
         </div>
         {spec && (
           <Tooltip>
@@ -98,7 +128,7 @@ function UsageCard({
 }: {
   title: string
   icon: React.ComponentType<{ className?: string }>
-  hint?: string
+  hint?: React.ReactNode
   spec?: string
   share: Share
   runnerList: Runner[]
@@ -190,7 +220,13 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
       <UsageCard
         title="CPU"
         icon={Cpu}
-        hint={specs.cpu ? undefined : `${usage.threads} threads`}
+        hint={
+          usage.clock?.cpu != null || usage.fan?.cpu != null ? (
+            <Readings mhz={usage.clock?.cpu} fan={usage.fan?.cpu} />
+          ) : specs.cpu ? undefined : (
+            `${usage.threads} threads`
+          )
+        }
         spec={specs.cpu}
         share={usage.cpu}
         runnerList={state.runners}
@@ -201,7 +237,9 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
       <UsageCard
         title="RAM"
         icon={MemoryStick}
-        hint={`of ${gigabytes(usage.ram.total)}`}
+        hint={[state.specs?.ram?.mts && `${state.specs.ram.mts} MT/s`, `of ${gigabytes(usage.ram.total)}`]
+          .filter(Boolean)
+          .join(" · ")}
         spec={specs.ram}
         share={usage.ram}
         runnerList={state.runners}
@@ -213,6 +251,7 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
       <UsageCard
         title="GPU"
         icon={Gauge}
+        hint={<Readings mhz={usage.clock?.gpu} fan={usage.fan?.gpu} />}
         spec={specs.gpu}
         share={usage.gpu}
         runnerList={state.runners}

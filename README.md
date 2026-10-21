@@ -175,11 +175,13 @@ jobs:
 | `RUNNERS_WEB_HOST` | `127.0.0.1` |
 | `RUNNERS_API_PORT` | `7130`, the runners' API the web dashboard reads (127.0.0.1 only) |
 
-Temperatures (and network speed) come from [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+Temperatures, CPU and GPU clocks, fan speeds (and network speed) come from [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
 when it is running with its web server on (Options › Remote Web Server, port 8085).
 Turn on Options › Run On Windows Startup too, or those readings go blank after a reboot.
 Without it, GPU temperature falls back to `nvidia-smi`, network speed to Windows'
-counters, and the CPU and SSD temperatures show `—`.
+counters, and the CPU and SSD temperatures, clocks and fans show `—`. The CPU fan is a
+motherboard header named CPU or Pump; an AIO run by its own software over USB (iCUE,
+NZXT CAM) isn't visible to LibreHardwareMonitor, so its fan doesn't show.
 
 ## How it works
 
