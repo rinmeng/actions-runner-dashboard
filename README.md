@@ -112,7 +112,8 @@ your browser (`RUNNERS_WEB_OPEN=0` to skip that). Ctrl+C stops
 every runner cleanly, as `q` does in the terminal dashboard.
 
 The site runs as its own background process, so it stays up after the runners stop and
-says they're offline, with who to ping (`NEXT_PUBLIC_RUNNERS_OWNER` in `web/.env.local`).
+says they're offline, with who to ping and when they're usually on (`NEXT_PUBLIC_RUNNERS_OWNER`
+and `NEXT_PUBLIC_RUNNERS_HOURS` in `web/.env.local`; rebuild after changing them).
 
 ```sh
 pnpm site             # just the site, in the foreground (e.g. to start it at logon)

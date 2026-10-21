@@ -45,8 +45,10 @@ async function restartRunner(runner: Runner) {
   else toast.error(body.error ?? `Couldn't restart ${runner.label}`)
 }
 
-// Who to ask when the runners are off, e.g. "Rin" (set in web/.env.local).
+// Who to ask when the runners are off, e.g. "Rin", and when they're usually on, e.g.
+// "Usually it's active 9 am to 9 pm Pacific." (both set in web/.env.local).
 const OWNER = process.env.NEXT_PUBLIC_RUNNERS_OWNER || "the owner"
+const HOURS = process.env.NEXT_PUBLIC_RUNNERS_HOURS
 
 function Offline() {
   return (
@@ -59,6 +61,7 @@ function Offline() {
         <EmptyDescription>
           Jobs for these runners wait in GitHub&apos;s queue until they&apos;re back. Ping {OWNER} to turn them on.
         </EmptyDescription>
+        {HOURS && <EmptyDescription className="font-medium text-foreground">{HOURS}</EmptyDescription>}
       </EmptyHeader>
       <EmptyContent className="text-xs text-muted-foreground">
         This page reconnects on its own once they&apos;re up.
