@@ -1,5 +1,6 @@
 import { Cpu, Fan, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
 
+import { AnimatedNumber } from "@/components/animated-number"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -150,7 +151,7 @@ function UsageCard({
   return (
     <StatCard title={title} icon={icon} hint={hint} spec={spec}>
       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
-        <span className="font-heading text-2xl font-semibold tabular-nums">{format(used)}</span>
+        <AnimatedNumber className="font-heading text-2xl font-semibold" value={used} format={format} />
         <span className="text-xs text-muted-foreground">
           runners <span className="font-medium text-amber-600 tabular-nums dark:text-amber-400">{format(runners)}</span>
         </span>
@@ -300,7 +301,7 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         spec={specs.disk}
       >
         <div className="flex items-baseline justify-between gap-2">
-          <span className="font-heading text-2xl font-semibold tabular-nums">{gigabytes(usage.disk.free)}</span>
+          <AnimatedNumber className="font-heading text-2xl font-semibold" value={usage.disk.free} format={gigabytes} />
           <span className="text-xs text-muted-foreground">free</span>
         </div>
         <UsageBar label="Disk space used" used={(usedDisk / usage.disk.total) * 100} />
