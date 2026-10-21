@@ -14,13 +14,15 @@ const HOURS = "Usually it's active 9 am to 9 pm Pacific.";
 
 // Cloudflare's own codes for an origin it couldn't reach, plus a plain bad gateway.
 const ORIGIN_DOWN = new Set([502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530]);
+// Marks responses this worker made up, so the offline page can tell when the machine is back.
+const OFFLINE_HEADER = 'x-runners-offline';
+const CHECK_SECONDS = 30;
 
 const PAGE = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="60">
 <title>Actions runners</title>
 <style>
   :root { color-scheme: light dark; --bg: #fff; --fg: #0a0a0a; --muted: #737373; --tile: #f5f5f5; }
@@ -43,8 +45,18 @@ const PAGE = `<!doctype html>
   <h1>${OWNER}'s runners are offline</h1>
   <p>Jobs for these runners wait in GitHub's queue until they're back. Ping ${OWNER} to turn them on.</p>
   <p class="hours">${HOURS}</p>
-  <small>This page checks again every minute.</small>
+  <small>This page updates on its own once they're back.</small>
 </main>
+<script>
+  // Checks in the background and reloads only once the machine answers: anything this
+  // worker serves itself carries the ${OFFLINE_HEADER} header.
+  setInterval(async () => {
+    try {
+      const response = await fetch('/', { method: 'HEAD', cache: 'no-store' });
+      if (!response.headers.has('${OFFLINE_HEADER}')) location.reload();
+    } catch {}
+  }, ${CHECK_SECONDS * 1000});
+</script>
 </body>
 </html>`;
 
@@ -54,7 +66,7 @@ export default {
     if (response && !ORIGIN_DOWN.has(response.status)) return response;
 
     const { pathname } = new URL(request.url);
-    const headers = { 'Cache-Control': 'no-store', 'Retry-After': '60' };
+    const headers = { 'Cache-Control': 'no-store', 'Retry-After': String(CHECK_SECONDS), [OFFLINE_HEADER]: '1' };
     if (pathname === '/api/status') {
       return Response.json({ online: false, busy: 0, idle: 0, total: 0, runners: [] }, { headers });
     }
