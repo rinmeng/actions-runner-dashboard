@@ -101,7 +101,9 @@ const percent = (value) => `${Math.round(value)}%`;
 // Bytes per second as "840 KB/s" or "2.4 MB/s".
 const speed = (bytes) =>
   bytes < 1024 ** 2 ? `${Math.round(bytes / 1024)} KB/s` : `${(bytes / 1024 ** 2).toFixed(1)} MB/s`;
-const celsius = (value) => (value == null ? '—' : `${Math.round(value)}°C`);
+const celsius = (value) => `${Math.round(value)}°C`;
+// padStart that ignores color codes, like padEnd.
+const padStart = (text, width) => ' '.repeat(Math.max(0, width - stripAnsi(text).length)) + text;
 // Columns: label, then total / used / runners, right-aligned.
 const usageRow = (label, total, used, runnersUsed) =>
   ` ${label.padEnd(6)}${total.padStart(11)}${used.padStart(11)}${yellow(runnersUsed.padStart(11))}`;
@@ -118,15 +120,42 @@ function usageRows() {
     { text: usageRow('RAM', gigabytes(ram.total), gigabytes(ram.used), gigabytes(ram.runners)) },
     { text: usageRow('GPU', '', percent(gpu.used), percent(gpu.runners)) },
     { text: '' },
-    { text: ` ${'Disk'.padEnd(6)}${usage.disk.drive.padStart(11)}${`${gigabytes(usage.disk.free)} free`.padStart(16)}` },
-    { text: ` ${'Net'.padEnd(6)}${`↓ ${speed(usage.net.down)}`.padStart(16)}${`↑ ${speed(usage.net.up)}`.padStart(11)}` },
-    { text: ` ${'Temp'.padEnd(6)}${`CPU ${celsius(usage.temp.cpu)}`.padStart(16)}${`GPU ${celsius(usage.temp.gpu)}`.padStart(11)}` },
-    { text: '' },
     // " Max this session" is 17 columns; "used" ends at column 29 like the rows.
     { text: bold(` Max this session${'used'.padStart(12)}${'runners'.padStart(11)}`) },
     { text: usageRow('CPU', '', percent(peak.cpu.used), percent(peak.cpu.runners)) },
     { text: usageRow('RAM', '', gigabytes(peak.ram.used), gigabytes(peak.ram.runners)) },
     { text: usageRow('GPU', '', percent(peak.gpu.used), percent(peak.gpu.runners)) },
+    { text: '' },
+    ...rangeTable('Temp', celsius, [
+      ['CPU', 'temp.cpu'],
+      ['GPU', 'temp.gpu'],
+      ['Hot spot', 'temp.gpuHotSpot'],
+      ['SSD', 'temp.ssd'],
+    ]),
+    { text: '' },
+    ...rangeTable('Network', speed, [
+      ['↓ Down', 'net.down'],
+      ['↑ Up', 'net.up'],
+    ]),
+    { text: '' },
+    // Free space lines up with the "now" column above.
+    { text: ` ${bold(`Disk ${usage.disk.drive}`.padEnd(9))}${padStart(gigabytes(usage.disk.free), 10)}${dim(` free of ${gigabytes(usage.disk.total)}`)}` },
+  ];
+}
+
+// A table of readings, each with its current value and its lowest and highest
+// this session. `rows` are [label, "group.name"] pairs into state.usage.
+function rangeTable(title, format, rows) {
+  const show = (value) => (value == null ? dim('—') : format(value));
+  const row = (label, now, min, max) =>
+    ` ${label.padEnd(9)}${padStart(now, 10)}${padStart(min, 10)}${padStart(max, 10)}`;
+  return [
+    { text: bold(row(title, 'now', 'min', 'max')) },
+    ...rows.map(([label, key]) => {
+      const [group, name] = key.split('.');
+      const range = state.range?.[key];
+      return { text: row(label, show(state.usage[group][name]), show(range?.min), show(range?.max)) };
+    }),
   ];
 }
 
