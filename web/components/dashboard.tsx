@@ -12,7 +12,6 @@ import { STAT_GRID, StatCards } from "@/components/stat-cards"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -154,7 +153,7 @@ export function Dashboard() {
             {runner ? (
               <JobSummary runner={runner} now={now} className="text-xs" />
             ) : (
-              <p className="text-xs text-muted-foreground">Every runner&apos;s output as it happens. Pick one on the left to see only its logs.</p>
+              <p className="hidden text-xs text-muted-foreground sm:block">Every runner&apos;s output as it happens. Pick one on the left to see only its logs.</p>
             )}
           </div>
           {runner && canRestart(runner.status) && (
@@ -191,9 +190,13 @@ export function Dashboard() {
               </div>
             )}
           </div>
-          <Card className="min-h-96 min-w-0 flex-1 gap-0 py-0">
-            <LogView key={selected} lines={viewLines} tagFor={selected === 0 ? tagFor : undefined} />
-          </Card>
+          <LogView
+            key={selected}
+            title={runner ? `${runner.label} output` : "All runners' output"}
+            lines={viewLines}
+            tagFor={selected === 0 ? tagFor : undefined}
+            className="min-h-96 flex-1"
+          />
         </div>
         )}
       </SidebarInset>

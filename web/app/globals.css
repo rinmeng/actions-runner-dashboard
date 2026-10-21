@@ -168,3 +168,8 @@
     --ansi-14: #67e8f9;
     --ansi-15: #f5f5f5;
 }
+
+/* Used by the shadcn code block (components/ui/code-block.tsx). */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
