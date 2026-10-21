@@ -51,6 +51,9 @@ export function runSite() {
     cwd: WEB_DIR,
     env,
     stdio: 'inherit',
+    // Started in the background (no console), Windows would give the server a window of
+    // its own, "next-server", and closing it would take the site down.
+    windowsHide: true,
   });
   child.on('exit', (code) => process.exit(code ?? 0));
   process.on('SIGINT', () => child.kill());
