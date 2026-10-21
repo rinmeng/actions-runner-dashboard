@@ -44,17 +44,33 @@ const CONNECTION_STYLE: Record<Connection, { dot: string; label: string }> = {
   closed: { dot: "bg-red-500", label: "Runners offline" },
 }
 
-// The PC's uptime and the connection to the runners, beside the theme toggle.
-function HeaderStatus({ uptime, connection }: { uptime?: number; connection: Connection }) {
+const PACIFIC_TIME = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+})
+
+// The PC's uptime with the time in Pacific under it, and the connection to the runners,
+// beside the theme toggle.
+function HeaderStatus({ uptime, now, connection }: { uptime?: number; now: number; connection: Connection }) {
   return (
     <div className="flex shrink-0 items-center gap-3">
-      {uptime !== undefined && (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground" title="PC uptime">
-          <Clock className="size-4" />
-          <span className="hidden sm:inline">PC uptime</span>
-          <span className="font-semibold text-foreground tabular-nums">{uptimeText(uptime)}</span>
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        <Clock className="size-4" />
+        <span className="grid leading-tight">
+          {uptime !== undefined && (
+            <span className="text-sm" title="PC uptime">
+              <span className="hidden sm:inline">PC uptime </span>
+              <span className="font-semibold text-foreground tabular-nums">{uptimeText(uptime)}</span>
+            </span>
+          )}
+          {/* Rendered at build time first, so it differs once the page loads. */}
+          <span className="text-xs tabular-nums" suppressHydrationWarning>
+            {PACIFIC_TIME.format(now)} PT
+          </span>
         </span>
-      )}
+      </span>
       <Badge variant="outline" className="h-7 gap-2 px-2.5 text-sm">
         <span className="relative flex size-2" aria-hidden>
           {connection === "open" && (
@@ -136,34 +152,45 @@ export function Dashboard() {
         now={now}
       />
       <SidebarInset className="h-svh min-w-0">
-        <header className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+        {/* On phones the status and theme toggle go on a row under the title. */}
+        <header className="flex shrink-0 items-start gap-2 border-b px-4 py-3 sm:items-center">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-1 h-4" />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <h1 className="font-heading text-base font-semibold">{runner ? runner.label : "All runners"}</h1>
-              {runner && (
-                <Badge variant="outline" className={STATUS_STYLE[runner.status].text}>
-                  <span className={cn("size-1.5 rounded-full", STATUS_STYLE[runner.status].dot)} />
-                  {runner.status}
-                </Badge>
+          <Separator orientation="vertical" className="mt-1.5 mr-1 h-4 sm:mt-0" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading text-base font-semibold whitespace-nowrap">
+                  {runner ? runner.label : "All runners"}
+                </h1>
+                {runner && (
+                  <Badge variant="outline" className={cn("shrink-0", STATUS_STYLE[runner.status].text)}>
+                    <span className={cn("size-1.5 rounded-full", STATUS_STYLE[runner.status].dot)} />
+                    {runner.status}
+                  </Badge>
+                )}
+                {runner && (
+                  <span className="hidden min-w-0 truncate text-xs text-muted-foreground sm:inline">{runner.name}</span>
+                )}
+              </div>
+              {/* On phones the runner's name gets its own line rather than a sliver beside the title. */}
+              {runner && <p className="truncate text-xs text-muted-foreground sm:hidden">{runner.name}</p>}
+              {runner ? (
+                <JobSummary runner={runner} now={now} className="text-xs" />
+              ) : (
+                <p className="hidden text-xs text-muted-foreground sm:block">Every runner&apos;s output as it happens. Pick one on the left to see only its logs.</p>
               )}
-              {runner && <span className="truncate text-xs text-muted-foreground">{runner.name}</span>}
             </div>
-            {runner ? (
-              <JobSummary runner={runner} now={now} className="text-xs" />
-            ) : (
-              <p className="hidden text-xs text-muted-foreground sm:block">Every runner&apos;s output as it happens. Pick one on the left to see only its logs.</p>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {runner && canRestart(runner.status) && (
+                <Button size="sm" onClick={() => restartRunner(runner)}>
+                  <RotateCw data-icon="inline-start" />
+                  Restart
+                </Button>
+              )}
+              <HeaderStatus uptime={state?.uptime} now={now} connection={connection} />
+              <ThemeToggle />
+            </div>
           </div>
-          {runner && canRestart(runner.status) && (
-            <Button size="sm" onClick={() => restartRunner(runner)}>
-              <RotateCw data-icon="inline-start" />
-              Restart
-            </Button>
-          )}
-          <HeaderStatus uptime={state?.uptime} connection={connection} />
-          <ThemeToggle />
         </header>
 
         {state?.quitting && (

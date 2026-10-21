@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { STATUS_STYLE } from "@/lib/status"
 import type { DashboardState } from "@/lib/types"
@@ -32,6 +33,12 @@ export function RunnerSidebar({
   now: number
 }) {
   const runners = state?.runners ?? []
+  // On phones the sidebar is a sheet over the page: picking a view closes it.
+  const { isMobile, setOpenMobile } = useSidebar()
+  const pick = (view: number) => {
+    onSelect(view)
+    if (isMobile) setOpenMobile(false)
+  }
   const count = (status: string) => runners.filter((runner) => runner.status === status).length
 
   return (
@@ -51,7 +58,7 @@ export function RunnerSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive={selected === 0} onClick={() => onSelect(0)}>
+                <SidebarMenuButton isActive={selected === 0} onClick={() => pick(0)}>
                   <Layers />
                   <span>All runners</span>
                 </SidebarMenuButton>
@@ -70,7 +77,7 @@ export function RunnerSidebar({
                     <SidebarMenuButton
                       size="lg"
                       isActive={selected === runner.number}
-                      onClick={() => onSelect(runner.number)}
+                      onClick={() => pick(runner.number)}
                       className="h-auto flex-col items-stretch gap-1 py-2"
                     >
                       <span className="flex items-center gap-2">
