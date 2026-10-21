@@ -2,10 +2,11 @@
 // performance counters by one long-running PowerShell process.
 
 import { spawn } from 'node:child_process';
+import { statfsSync } from 'node:fs';
 import { availableParallelism, freemem, totalmem } from 'node:os';
-import { join } from 'node:path';
+import { join, parse, resolve } from 'node:path';
 
-import { runners, scheduleRender, state, system32 } from './state.mjs';
+import { home, runners, scheduleRender, state, system32 } from './state.mjs';
 
 const SAMPLE_SECONDS = 2;
 
@@ -25,7 +26,17 @@ while ($true) {
       '[{0},"{1}/{2}",{3}]' -f $Matches[1], $Matches[2], $Matches[3], $e.UtilizationPercentage
     }
   }
-  [Console]::Out.WriteLine('{"cpu":' + $busy + ',"procs":[' + ($procs -join ',') + '],"engines":[' + ($engines -join ',') + ']}')
+  $down = 0; $up = 0
+  foreach ($n in Get-CimInstance Win32_PerfFormattedData_Tcpip_NetworkInterface -Property BytesReceivedPersec,BytesSentPersec) {
+    $down += $n.BytesReceivedPersec; $up += $n.BytesSentPersec
+  }
+  $gpuTemp = nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits | Select-Object -First 1
+  if ($gpuTemp -notmatch '^\\s*\\d+\\s*$') { $gpuTemp = 'null' }
+  # Ryzen CPUs report no temperature to Windows; LibreHardwareMonitor, when running, publishes it over WMI.
+  $cpuTemp = Get-CimInstance -Namespace root/LibreHardwareMonitor -ClassName Sensor -Filter "SensorType='Temperature'" |
+    Where-Object { $_.Identifier -match 'cpu' -and $_.Name -match 'Tctl|Package|Tdie' } | Select-Object -First 1 -ExpandProperty Value
+  $cpuTemp = if ($cpuTemp -eq $null) { 'null' } else { [int]$cpuTemp }
+  [Console]::Out.WriteLine('{"cpu":' + $busy + ',"procs":[' + ($procs -join ',') + '],"engines":[' + ($engines -join ',') + '],"net":[' + $down + ',' + $up + '],"temps":[' + $cpuTemp + ',' + $gpuTemp.Trim() + ']}')
   [Console]::Out.Flush()
   Start-Sleep -Seconds ${SAMPLE_SECONDS}
 }`;
@@ -57,6 +68,12 @@ function busiestEngine(engines, include) {
   return Math.min(100, Math.max(0, ...totals.values()));
 }
 
+// Free and total space on the drive the runners' work folders are on.
+function diskSpace() {
+  const { bavail, blocks, bsize } = statfsSync(home);
+  return { drive: parse(resolve(home)).root.replace(/\\$/, ''), free: bavail * bsize, total: blocks * bsize };
+}
+
 function summarize(sample) {
   const threads = availableParallelism();
   const ids = runnerProcessIds(sample.procs);
@@ -72,6 +89,10 @@ function summarize(sample) {
     cpu: { used: sample.cpu / threads, runners: runnerCpu / threads },
     ram: { total: totalmem(), used: totalmem() - freemem(), runners: runnerRam },
     gpu: { used: busiestEngine(sample.engines, () => true), runners: busiestEngine(sample.engines, (pid) => ids.has(pid)) },
+    disk: diskSpace(),
+    net: { down: sample.net[0], up: sample.net[1] },
+    // °C, or null when there is no sensor to read.
+    temp: { cpu: sample.temps[0], gpu: sample.temps[1] },
   };
 }
 

@@ -1,6 +1,7 @@
 // Drawing the screen and handling keyboard and mouse input.
 
 import { spawn } from 'node:child_process';
+import { uptime } from 'node:os';
 
 import { prLink, quit, restart, tag } from './runners.mjs';
 import {
@@ -59,6 +60,14 @@ function duration(ms) {
   return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`;
 }
 
+// "3d 04h 12m", dropping days while under a day.
+function uptimeText(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = String(Math.floor((seconds % 86400) / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  return days ? `${days}d ${hours}h ${minutes}m` : `${hours}h ${minutes}m`;
+}
+
 const RESULT_MARK = { Succeeded: green('✓'), Failed: red('✗'), Canceled: dim('⊘') };
 
 // Summary of a runner's current or last job: one line for the header, or for
@@ -89,6 +98,10 @@ function jobSummary(runner, { long }) {
 const GB = 1024 ** 3;
 const gigabytes = (bytes) => `${(bytes / GB).toFixed(1)} GB`;
 const percent = (value) => `${Math.round(value)}%`;
+// Bytes per second as "840 KB/s" or "2.4 MB/s".
+const speed = (bytes) =>
+  bytes < 1024 ** 2 ? `${Math.round(bytes / 1024)} KB/s` : `${(bytes / 1024 ** 2).toFixed(1)} MB/s`;
+const celsius = (value) => (value == null ? '—' : `${Math.round(value)}°C`);
 // Columns: label, then total / used / runners, right-aligned.
 const usageRow = (label, total, used, runnersUsed) =>
   ` ${label.padEnd(6)}${total.padStart(11)}${used.padStart(11)}${yellow(runnersUsed.padStart(11))}`;
@@ -105,6 +118,10 @@ function usageRows() {
     { text: usageRow('RAM', gigabytes(ram.total), gigabytes(ram.used), gigabytes(ram.runners)) },
     { text: usageRow('GPU', '', percent(gpu.used), percent(gpu.runners)) },
     { text: '' },
+    { text: ` ${'Disk'.padEnd(6)}${usage.disk.drive.padStart(11)}${`${gigabytes(usage.disk.free)} free`.padStart(16)}` },
+    { text: ` ${'Net'.padEnd(6)}${`↓ ${speed(usage.net.down)}`.padStart(16)}${`↑ ${speed(usage.net.up)}`.padStart(11)}` },
+    { text: ` ${'Temp'.padEnd(6)}${`CPU ${celsius(usage.temp.cpu)}`.padStart(16)}${`GPU ${celsius(usage.temp.gpu)}`.padStart(11)}` },
+    { text: '' },
     // " Max this session" is 17 columns; "used" ends at column 29 like the rows.
     { text: bold(` Max this session${'used'.padStart(12)}${'runners'.padStart(11)}`) },
     { text: usageRow('CPU', '', percent(peak.cpu.used), percent(peak.cpu.runners)) },
@@ -116,6 +133,8 @@ function usageRows() {
 function sidebarRows(height) {
   const count = (status) => runners.filter((runner) => runner.status === status).length;
   const rows = [
+    { text: ` ${bold('PC uptime')}  ${uptimeText(uptime())}` },
+    { text: '' },
     ...usageRows(),
     { text: '' },
     { text: bold(' Actions runners') },
