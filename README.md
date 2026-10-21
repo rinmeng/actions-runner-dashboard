@@ -21,8 +21,10 @@ with shadcn/ui.
 
 ## Requirements
 
-- Windows 10 1709 or newer (Windows 11 recommended).
-- Node 18.14+. `npm` or `pnpm` both work.
+- Windows 10 1803 or newer (Windows 11 recommended). Setup unpacks the runner with the
+  `tar.exe` that ships with Windows from 1803 on.
+- Node 18.14+. The commands below use `pnpm`; with `npm`, use `npm run <script>`
+  (e.g. `npm run setup-runners -- --repo owner/repo`).
 - [`gh`](https://cli.github.com/), signed in (`gh auth login`), for setup and `status`.
   Setup needs admin on the repo, or permission to manage the org's runners.
 - A terminal with mouse support: Windows Terminal or Git Bash. `status`/`watch` need bash.
@@ -33,7 +35,8 @@ Make a folder to hold everything and clone this repo into it. The runners are
 created next to the clone:
 
 ```sh
-mkdir ~/actions-runners && cd ~/actions-runners
+mkdir ~/actions-runners
+cd ~/actions-runners
 git clone https://github.com/rinmeng/actions-runner-dashboard
 cd actions-runner-dashboard
 
@@ -102,7 +105,7 @@ The same dashboard in the browser: the runner list, live colored logs (all runne
 one), clickable PR links, a restart button for stopped runners, and the usage stats.
 
 ```sh
-cd web && pnpm install && cd ..   # once
+pnpm --dir web install   # once
 pnpm web              # or: node dashboard/index.mjs --web
 ```
 

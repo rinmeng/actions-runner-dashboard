@@ -26,6 +26,8 @@ export const home = process.env.RUNNERS_HOME ?? join(dirname(fileURLToPath(impor
 const RUNNER_DIR = /^actions-runner(?:-(\d+))?$/;
 
 function findRunners() {
+  // A new RUNNERS_HOME doesn't exist until setup creates the first runner in it.
+  if (!existsSync(home)) return [];
   return readdirSync(home, { withFileTypes: true })
     .map((entry) => ({ entry, match: entry.isDirectory() && RUNNER_DIR.exec(entry.name) }))
     .filter(({ entry, match }) => match && existsSync(join(home, entry.name, '.runner')))
