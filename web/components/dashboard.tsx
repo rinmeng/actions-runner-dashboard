@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Moon, RotateCw, Sun, TriangleAlert } from "lucide-react"
+import { Moon, PowerOff, RotateCw, Sun, TriangleAlert } from "lucide-react"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
 
@@ -43,8 +43,31 @@ async function restartRunner(runner: Runner) {
   else toast.error(body.error ?? `Couldn't restart ${runner.label}`)
 }
 
+// Who to ask when the runners are off, e.g. "Rin" (set in web/.env.local).
+const OWNER = process.env.NEXT_PUBLIC_RUNNERS_OWNER || "the owner"
+
+function Offline() {
+  return (
+    <div className="flex flex-1 items-center justify-center p-6">
+      <Card className="max-w-md items-center gap-3 px-8 py-10 text-center">
+        <PowerOff className="size-8 text-muted-foreground" />
+        <h2 className="font-heading text-lg font-semibold">
+          {OWNER === "the owner" ? "The runners are offline" : `${OWNER}'s runners are offline`}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Jobs for these runners wait in GitHub&apos;s queue until they&apos;re back. Ping {OWNER} to turn them on.
+        </p>
+        <p className="text-xs text-muted-foreground">This page reconnects on its own once they&apos;re up.</p>
+      </Card>
+    </div>
+  )
+}
+
 export function Dashboard() {
-  const { state, lines, connection } = useDashboard()
+  const dashboard = useDashboard()
+  const { lines, connection } = dashboard
+  // Last state is stale once the runners are gone.
+  const state = connection === "closed" ? null : dashboard.state
   const now = useNow()
   // 0 for all runners, else a runner's number.
   const [selected, setSelected] = React.useState(0)
@@ -106,12 +129,6 @@ export function Dashboard() {
           <ThemeToggle />
         </header>
 
-        {connection === "closed" && (
-          <div className="flex items-center gap-2 border-b bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            <TriangleAlert className="size-4" />
-            Can&apos;t reach the runners. Start them with <code className="font-mono">runners-web</code>; retrying every few seconds.
-          </div>
-        )}
         {state?.quitting && (
           <div className="flex items-center gap-2 border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-400">
             <TriangleAlert className="size-4" />
@@ -119,7 +136,10 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* Stats above the logs, or in a column beside them on wide screens. */}
+        {connection === "closed" ? (
+          <Offline />
+        ) : (
+        /* Stats above the logs, or in a column beside them on wide screens. */
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 xl:flex-row-reverse xl:overflow-hidden">
           <div className="shrink-0 xl:w-80 xl:overflow-y-auto">
             {state ? (
@@ -136,6 +156,7 @@ export function Dashboard() {
             <LogView key={selected} lines={viewLines} tagFor={selected === 0 ? tagFor : undefined} />
           </Card>
         </div>
+        )}
       </SidebarInset>
     </SidebarProvider>
   )

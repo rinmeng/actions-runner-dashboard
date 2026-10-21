@@ -1,7 +1,7 @@
 import { Cpu, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { celsius, gigabytes, percent, speed } from "@/lib/format"
+import { celsius, gigabytes, percent, specLines, speed } from "@/lib/format"
 import type { DashboardState } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -22,19 +22,29 @@ function StatCard({
   title,
   icon: Icon,
   hint,
+  spec,
   children,
 }: {
   title: string
   icon: React.ComponentType<{ className?: string }>
   hint?: string
+  // The hardware, under the title: "AMD Ryzen 9 9900X · 12C/24T · 4.4 GHz base".
+  spec?: string
   children: React.ReactNode
 }) {
   return (
     <Card size="sm" className="gap-2">
-      <CardHeader className="flex flex-row items-center gap-2">
-        <Icon className="size-4 text-muted-foreground" />
-        <CardTitle className="text-sm">{title}</CardTitle>
-        {hint && <span className="ml-auto text-xs text-muted-foreground">{hint}</span>}
+      <CardHeader className="flex flex-col gap-0.5">
+        <div className="flex w-full items-center gap-2">
+          <Icon className="size-4 text-muted-foreground" />
+          <CardTitle className="text-sm">{title}</CardTitle>
+          {hint && <span className="ml-auto text-xs text-muted-foreground">{hint}</span>}
+        </div>
+        {spec && (
+          <p className="w-full truncate text-xs text-muted-foreground" title={spec}>
+            {spec}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="flex flex-col gap-2">{children}</CardContent>
     </Card>
@@ -46,6 +56,7 @@ function UsageCard({
   title,
   icon,
   hint,
+  spec,
   used,
   runners,
   maxUsed,
@@ -56,6 +67,7 @@ function UsageCard({
   title: string
   icon: React.ComponentType<{ className?: string }>
   hint?: string
+  spec?: string
   used: number
   runners: number
   maxUsed?: number
@@ -65,7 +77,7 @@ function UsageCard({
   format: (value: number) => string
 }) {
   return (
-    <StatCard title={title} icon={icon} hint={hint}>
+    <StatCard title={title} icon={icon} hint={hint} spec={spec}>
       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
         <span className="font-heading text-2xl font-semibold tabular-nums">{format(used)}</span>
         <span className="text-xs text-muted-foreground">
@@ -131,12 +143,14 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
     return <p className={cn("text-sm text-muted-foreground", className)}>Sampling usage…</p>
   }
   const usedDisk = usage.disk.total - usage.disk.free
+  const specs = specLines(state.specs)
   return (
     <div className={cn(STAT_GRID, className)}>
       <UsageCard
         title="CPU"
         icon={Cpu}
-        hint={`${usage.threads} threads`}
+        hint={specs.cpu ? undefined : `${usage.threads} threads`}
+        spec={specs.cpu}
         used={usage.cpu.used}
         runners={usage.cpu.runners}
         maxUsed={peak?.cpu.used}
@@ -147,6 +161,7 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         title="RAM"
         icon={MemoryStick}
         hint={`of ${gigabytes(usage.ram.total)}`}
+        spec={specs.ram}
         used={usage.ram.used}
         runners={usage.ram.runners}
         maxUsed={peak?.ram.used}
@@ -160,6 +175,7 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
       <UsageCard
         title="GPU"
         icon={Gauge}
+        spec={specs.gpu}
         used={usage.gpu.used}
         runners={usage.gpu.runners}
         maxUsed={peak?.gpu.used}
@@ -188,13 +204,25 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
           { label: "↑ Up", key: "net.up", value: usage.net.up },
         ]}
       />
-      <StatCard title={`Disk ${usage.disk.drive}`} icon={HardDrive} hint={`of ${gigabytes(usage.disk.total)}`}>
+      <StatCard
+        title={`Disk ${usage.disk.drive}`}
+        icon={HardDrive}
+        hint={`of ${gigabytes(usage.disk.total)}`}
+        spec={specs.disk}
+      >
         <div className="flex items-baseline justify-between gap-2">
           <span className="font-heading text-2xl font-semibold tabular-nums">{gigabytes(usage.disk.free)}</span>
           <span className="text-xs text-muted-foreground">free</span>
         </div>
         <UsageBar used={(usedDisk / usage.disk.total) * 100} />
-        <p className="text-xs text-muted-foreground tabular-nums">{percent((usedDisk / usage.disk.total) * 100)} used</p>
+        <p className="flex justify-between gap-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+          <span>{percent((usedDisk / usage.disk.total) * 100)} used</span>
+          {usage.disk.read != null && (
+            <span>
+              Read {speed(usage.disk.read)} · Write {speed(usage.disk.write)}
+            </span>
+          )}
+        </p>
       </StatCard>
     </div>
   )

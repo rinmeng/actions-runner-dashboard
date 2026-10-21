@@ -89,12 +89,17 @@ function pickSensors(list) {
   // WSL's virtual adapter would count its traffic a second time.
   const nics = list.filter((sensor) => sensor.id.startsWith('/nic/') && !sensor.hardware.startsWith('vEthernet'));
   const rate = (name) => nics.filter((sensor) => sensor.name === name).reduce((sum, sensor) => sum + sensor.value, 0);
+  // The runners' disk, by the name Windows gave it in readSpecs.
+  const disk = (name) =>
+    list.find((sensor) => sensor.hardware === state.specs?.disk?.name && sensor.name === name)?.value ?? null;
   return {
     cpuTemp: find(/^\/(amd|intel)cpu\/.*\/temperature\//, /Tctl|Package/),
     gpuTemp: find(/^\/gpu-nvidia\/.*\/temperature\//, /^GPU Core$/),
     gpuHotSpot: find(/^\/gpu-nvidia\/.*\/temperature\//, /Hot Spot/),
     ssdTemp: find(/^\/nvme\/.*\/temperature\//, /Composite/),
     net: nics.length ? { down: rate('Download Speed'), up: rate('Upload Speed') } : null,
+    diskRead: disk('Read Rate'),
+    diskWrite: disk('Write Rate'),
   };
 }
 
@@ -115,10 +120,50 @@ async function readSensors() {
   }
 }
 
-// Free and total space on the drive the runners' work folders are on.
+// The drive the runners' work folders are on, as "C:".
+const DRIVE = parse(resolve(home)).root.replace(/\\$/, '');
+
+// Free and total space on that drive.
 function diskSpace() {
   const { bavail, blocks, bsize } = statfsSync(home);
-  return { drive: parse(resolve(home)).root.replace(/\\$/, ''), free: bavail * bsize, total: blocks * bsize };
+  return { drive: DRIVE, free: bavail * bsize, total: blocks * bsize };
+}
+
+// The machine's hardware, read once: CPU, GPU, RAM and the runners' disk.
+const SPECS_SCRIPT = `
+$ErrorActionPreference = 'SilentlyContinue'
+$cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+$ram = @(Get-CimInstance Win32_PhysicalMemory)
+$disk = Get-Partition -DriveLetter '${DRIVE[0]}' | Get-Disk
+$gpu = nvidia-smi --query-gpu=name,memory.total,clocks.max.graphics --format=csv,noheader,nounits | Select-Object -First 1
+if ($gpu) { $gpu = $gpu -split ',\\s*'; $gpu = @{ name = $gpu[0]; memoryMb = [int]$gpu[1]; maxMhz = [int]$gpu[2] } }
+else { $gpu = @{ name = (Get-CimInstance Win32_VideoController | Select-Object -First 1).Name } }
+@{
+  cpu = @{ name = $cpu.Name.Trim(); cores = $cpu.NumberOfCores; threads = $cpu.NumberOfLogicalProcessors; baseMhz = $cpu.MaxClockSpeed }
+  gpu = $gpu
+  ram = @{ part = ($ram | Select-Object -First 1).PartNumber.Trim(); maker = ($ram | Select-Object -First 1).Manufacturer; sticks = $ram.Count;
+           stickBytes = ($ram | Select-Object -First 1).Capacity; mts = ($ram | Select-Object -First 1).ConfiguredClockSpeed; type = ($ram | Select-Object -First 1).SMBIOSMemoryType }
+  disk = @{ name = $disk.FriendlyName; bus = "$($disk.BusType)" }
+} | ConvertTo-Json -Compress`;
+
+function readSpecs() {
+  const child = spawn(
+    join(system32, 'WindowsPowerShell/v1.0/powershell.exe'),
+    ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(SPECS_SCRIPT, 'utf16le').toString('base64')],
+    { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] },
+  );
+  let output = '';
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', (text) => (output += text));
+  child.on('close', () => {
+    try {
+      state.specs = JSON.parse(output);
+      scheduleRender();
+    } catch {
+      // No specs; the dashboard shows the cards without them.
+    }
+  });
+  child.on('error', () => {});
 }
 
 function summarize(sample) {
@@ -136,7 +181,8 @@ function summarize(sample) {
     cpu: { used: sample.cpu / threads, runners: runnerCpu / threads },
     ram: { total: totalmem(), used: totalmem() - freemem(), runners: runnerRam },
     gpu: { used: busiestEngine(sample.engines, () => true), runners: busiestEngine(sample.engines, (pid) => ids.has(pid)) },
-    disk: diskSpace(),
+    // Read and write rates are bytes per second, or null without LibreHardwareMonitor.
+    disk: { ...diskSpace(), read: sensors.diskRead ?? null, write: sensors.diskWrite ?? null },
     net: sensors.net ?? { down: sample.net[0], up: sample.net[1] },
     // °C, or null when there is no sensor to read.
     temp: {
@@ -197,4 +243,5 @@ export function startUsageSampler() {
 
   readSensors();
   setInterval(readSensors, SAMPLE_SECONDS * 1000).unref();
+  readSpecs();
 }

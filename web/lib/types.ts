@@ -56,7 +56,8 @@ export type Usage = {
   cpu: Share
   ram: Share & { total: number }
   gpu: Share
-  disk: { drive: string; free: number; total: number }
+  // Read and write rates in bytes per second; null without LibreHardwareMonitor.
+  disk: { drive: string; free: number; total: number; read: number | null; write: number | null }
   net: { down: number; up: number }
   temp: {
     cpu: number | null
@@ -66,6 +67,22 @@ export type Usage = {
   }
 }
 
+// The machine's hardware, as Windows reports it (dashboard/usage.mjs readSpecs).
+export type Specs = {
+  cpu?: { name?: string; cores?: number; threads?: number; baseMhz?: number }
+  gpu?: { name?: string; memoryMb?: number; maxMhz?: number }
+  ram?: {
+    part?: string
+    maker?: string
+    sticks?: number
+    stickBytes?: number
+    mts?: number
+    // SMBIOS memory type: 26 is DDR4, 34 is DDR5.
+    type?: number
+  }
+  disk?: { name?: string; bus?: string }
+}
+
 export type DashboardState = {
   uptime: number
   quitting: boolean
@@ -73,5 +90,6 @@ export type DashboardState = {
   peak: { cpu: Share; ram: Share; gpu: Share } | null
   // Lowest and highest this session, by "group.name" (e.g. "temp.cpu").
   range: Record<string, { min: number; max: number }>
+  specs: Specs | null
   runners: Runner[]
 }

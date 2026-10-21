@@ -10,6 +10,8 @@
   "scripts": {
     "start": "node dashboard/index.mjs",
     "web": "node dashboard/index.mjs --web",
+    "site": "node dashboard/site.mjs",
+    "site:stop": "node dashboard/site.mjs stop",
     "web:build": "pnpm --dir web build",
     "web:dev": "pnpm --dir web dev",
     "setup-runners": "node setup/index.mjs",

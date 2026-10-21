@@ -1,0 +1,51 @@
+# Reports whether the self-hosted runners are up, on GitHub's own runners, so a run
+# whose jobs sit at "Waiting for a runner to pick up this job…" says why. Call it from
+# a workflow that uses the runners:
+#
+#   jobs:
+#     runner-status:
+#       uses: rinmeng/actions-runner-dashboard/.github/workflows/runner-status.yml@main
+#
+# It never fails, so it can't block anything. When the runners are offline (or the
+# machine is off and the dashboard unreachable) it adds a warning to the run's summary.
+
+name: Runner status
+
+on:
+  workflow_call:
+    inputs:
+      dashboard-url:
+        description: The web dashboard, which serves /api/status
+        type: string
+        default: https://services.web8th.com
+      owner:
+        description: Who to ping when the runners are offline
+        type: string
+        default: Rin
+
+jobs:
+  status:
+    name: Self-hosted runners
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Check the runners
+        env:
+          URL: ${{ inputs.dashboard-url }}
+          OWNER: ${{ inputs.owner }}
+        run: |
+          status=$(curl -fsS --max-time 10 "$URL/api/status" 2>/dev/null || true)
+          online=$(echo "$status" | jq -r '.online // false' 2>/dev/null || echo false)
+          if [ "$online" = "true" ]; then
+            busy=$(echo "$status" | jq -r .busy)
+            idle=$(echo "$status" | jq -r .idle)
+            total=$(echo "$status" | jq -r .total)
+            echo "### ✅ ${OWNER}'s runners are online" >> "$GITHUB_STEP_SUMMARY"
+            echo "${busy} busy · ${idle} idle · ${total} total. Live status: ${URL}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=${OWNER}'s runners are offline::Jobs on the self-hosted runners will wait until they're back. Status: ${URL} · ping ${OWNER} to turn them on."
+            echo "### ⚠️ ${OWNER}'s runners are offline" >> "$GITHUB_STEP_SUMMARY"
+            echo "Jobs that run on them wait in the queue (\"Waiting for a runner to pick up this job…\") until they're back." >> "$GITHUB_STEP_SUMMARY"
+            echo "Ping ${OWNER} to turn them on. Status: ${URL}" >> "$GITHUB_STEP_SUMMARY"
+          fi

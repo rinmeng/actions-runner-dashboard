@@ -3,6 +3,7 @@
 //
 //   GET  /events                Server-sent events: "snapshot" first, then "line",
 //                               "line-update" and "state" as things change
+//   GET  /status                each runner's status, for the public /api/status
 //   POST /runners/<n>/restart   start a stopped or failed runner
 
 import { createServer } from 'node:http';
@@ -31,6 +32,7 @@ function stateMessage() {
     usage: state.usage ?? null,
     peak: state.peak ?? null,
     range: state.range ?? {},
+    specs: state.specs ?? null,
     runners: runners.map((runner) => ({
       number: runner.number,
       label: runner.label,
@@ -91,6 +93,12 @@ function json(response, status, body) {
 function handle(request, response) {
   const url = new URL(request.url, 'http://localhost');
   if (request.method === 'GET' && url.pathname === '/events') return streamEvents(request, response);
+  if (request.method === 'GET' && url.pathname === '/status') {
+    return json(response, 200, {
+      quitting: state.quitting,
+      runners: runners.map((runner) => ({ label: runner.label, status: runner.status })),
+    });
+  }
 
   const restartMatch = /^\/runners\/(\d+)\/restart$/.exec(url.pathname);
   if (request.method === 'POST' && restartMatch) {

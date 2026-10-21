@@ -109,8 +109,18 @@ pnpm web              # or: node dashboard/index.mjs --web
 This runs the runners without the terminal UI (their output still goes to the console),
 builds the web app on first run, serves it at <http://127.0.0.1:3130> and opens it in
 your browser (`RUNNERS_WEB_OPEN=0` to skip that). Ctrl+C stops
-every runner cleanly, as `q` does in the terminal dashboard. After changing `web/`, run
-`pnpm web:build` before the next start.
+every runner cleanly, as `q` does in the terminal dashboard.
+
+The site runs as its own background process, so it stays up after the runners stop and
+says they're offline, with who to ping (`NEXT_PUBLIC_RUNNERS_OWNER` in `web/.env.local`).
+
+```sh
+pnpm site             # just the site, in the foreground (e.g. to start it at logon)
+pnpm site:stop        # stop the site, wherever it was started
+```
+
+After changing `web/`: `pnpm site:stop`, then `pnpm web:build`, then start it again.
+Building while the site runs breaks the running site.
 
 A handy alias: `alias runners-web='node ~/actions-runners/actions-runner-dashboard/dashboard/index.mjs --web'`.
 
@@ -120,6 +130,22 @@ A handy alias: `alias runners-web='node ~/actions-runners/actions-runner-dashboa
 - Both servers listen on 127.0.0.1 only. To reach the dashboard from elsewhere, put a
   tunnel such as `cloudflared` in front of port 3130, **with access control** (for
   example Cloudflare Access): anyone who can open it sees your logs and can restart runners.
+
+### Runner status on GitHub
+
+When the runners are off, GitHub only says "Waiting for a runner to pick up this job…".
+To say why, add this job to a workflow that uses them. It runs on GitHub's own runners,
+reads `/api/status`, and warns on the run (with a link to the dashboard) when they're
+offline or the machine is unreachable. It never fails the run.
+
+```yaml
+jobs:
+  runner-status:
+    uses: rinmeng/actions-runner-dashboard/.github/workflows/runner-status.yml@main
+    # with:
+    #   dashboard-url: https://services.web8th.com
+    #   owner: Rin
+```
 
 | Setting | Default |
 | --- | --- |
