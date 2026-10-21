@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Moon, PowerOff, RotateCw, Sun, TriangleAlert } from "lucide-react"
+import { Clock, Moon, PowerOff, RotateCw, Sun, TriangleAlert } from "lucide-react"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
 
@@ -17,8 +17,9 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useDashboard } from "@/hooks/use-dashboard"
+import { type Connection, useDashboard } from "@/hooks/use-dashboard"
 import { useNow } from "@/hooks/use-now"
+import { uptimeText } from "@/lib/format"
 import { canRestart, runnerColor, STATUS_STYLE } from "@/lib/status"
 import type { Line, Runner } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -35,6 +36,36 @@ function ThemeToggle() {
       <Sun className="hidden dark:block" />
       <Moon className="dark:hidden" />
     </Button>
+  )
+}
+
+const CONNECTION_STYLE: Record<Connection, { dot: string; label: string }> = {
+  open: { dot: "bg-emerald-500", label: "Live" },
+  connecting: { dot: "bg-amber-500 animate-pulse", label: "Connecting…" },
+  closed: { dot: "bg-red-500", label: "Runners offline" },
+}
+
+// The PC's uptime and the connection to the runners, beside the theme toggle.
+function HeaderStatus({ uptime, connection }: { uptime?: number; connection: Connection }) {
+  return (
+    <div className="flex shrink-0 items-center gap-3">
+      {uptime !== undefined && (
+        <span className="flex items-center gap-1.5 text-sm text-muted-foreground" title="PC uptime">
+          <Clock className="size-4" />
+          <span className="hidden sm:inline">PC uptime</span>
+          <span className="font-semibold text-foreground tabular-nums">{uptimeText(uptime)}</span>
+        </span>
+      )}
+      <Badge variant="outline" className="h-7 gap-2 px-2.5 text-sm">
+        <span className="relative flex size-2" aria-hidden>
+          {connection === "open" && (
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+          )}
+          <span className={cn("relative inline-flex size-2 rounded-full", CONNECTION_STYLE[connection].dot)} />
+        </span>
+        {CONNECTION_STYLE[connection].label}
+      </Badge>
+    </div>
   )
 }
 
@@ -101,7 +132,6 @@ export function Dashboard() {
     <SidebarProvider style={{ "--sidebar-width": "19rem" } as React.CSSProperties}>
       <RunnerSidebar
         state={state}
-        connection={connection}
         selected={selected}
         onSelect={setSelected}
         now={now}
@@ -133,6 +163,7 @@ export function Dashboard() {
               Restart
             </Button>
           )}
+          <HeaderStatus uptime={state?.uptime} connection={connection} />
           <ThemeToggle />
         </header>
 

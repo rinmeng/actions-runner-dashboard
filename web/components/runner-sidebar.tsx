@@ -1,13 +1,11 @@
 "use client"
 
-import { Clock, Layers, Server } from "lucide-react"
+import { Layers, Server } from "lucide-react"
 
 import { JobSummary } from "@/components/job-summary"
-import { Badge } from "@/components/ui/badge"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -17,27 +15,17 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-import type { Connection } from "@/hooks/use-dashboard"
-import { uptimeText } from "@/lib/format"
 import { STATUS_STYLE } from "@/lib/status"
 import type { DashboardState } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-const CONNECTION_STYLE: Record<Connection, { dot: string; label: string }> = {
-  open: { dot: "bg-emerald-500", label: "Live" },
-  connecting: { dot: "bg-amber-500 animate-pulse", label: "Connecting…" },
-  closed: { dot: "bg-red-500", label: "Runners offline" },
-}
-
 export function RunnerSidebar({
   state,
-  connection,
   selected,
   onSelect,
   now,
 }: {
   state: DashboardState | null
-  connection: Connection
   // 0 for all runners, else a runner's number.
   selected: number
   onSelect: (view: number) => void
@@ -99,18 +87,6 @@ export function RunnerSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="gap-1.5 px-4 pb-4 text-xs text-muted-foreground">
-        {state && (
-          <span className="flex items-center gap-2">
-            <Clock className="size-3.5" />
-            PC uptime <span className="ml-auto font-medium text-foreground tabular-nums">{uptimeText(state.uptime)}</span>
-          </span>
-        )}
-        <Badge variant="outline" className="text-muted-foreground">
-          <span className={cn("size-1.5 rounded-full", CONNECTION_STYLE[connection].dot)} />
-          {CONNECTION_STYLE[connection].label}
-        </Badge>
-      </SidebarFooter>
     </Sidebar>
   )
 }
