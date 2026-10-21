@@ -107,7 +107,8 @@ pnpm web              # or: node dashboard/index.mjs --web
 ```
 
 This runs the runners without the terminal UI (their output still goes to the console),
-builds the web app on first run, and serves it at <http://127.0.0.1:3130>. Ctrl+C stops
+builds the web app on first run, serves it at <http://127.0.0.1:3130> and opens it in
+your browser (`RUNNERS_WEB_OPEN=0` to skip that). Ctrl+C stops
 every runner cleanly, as `q` does in the terminal dashboard. After changing `web/`, run
 `pnpm web:build` before the next start.
 

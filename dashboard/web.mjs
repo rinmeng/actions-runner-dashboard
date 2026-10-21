@@ -39,5 +39,20 @@ export function startWeb() {
     if (code) console.error(red(`The web dashboard exited with code ${code}; the runners carry on without it.`));
   });
   process.on('exit', () => child.kill());
-  console.log(`Web dashboard: http://${WEB_HOST === '0.0.0.0' ? 'localhost' : WEB_HOST}:${WEB_PORT}`);
+  const url = `http://${WEB_HOST === '0.0.0.0' ? 'localhost' : WEB_HOST}:${WEB_PORT}`;
+  console.log(`Web dashboard: ${url}`);
+  if (process.env.RUNNERS_WEB_OPEN !== '0') void openWhenReady(url);
+}
+
+// Opens the dashboard in the default browser once the server answers.
+async function openWhenReady(url) {
+  for (let attempt = 0; attempt < 120; attempt++) {
+    try {
+      await fetch(url, { signal: AbortSignal.timeout(1000) });
+      spawn('rundll32.exe', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
 }
