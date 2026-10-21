@@ -4,7 +4,7 @@
 // (building under a running site breaks it), then `pnpm web:build`, then start it again.
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,6 +20,7 @@ export const WEB_PORT = Number(process.env.RUNNERS_WEB_PORT ?? 3130);
 const WEB_HOST = process.env.RUNNERS_WEB_HOST ?? '127.0.0.1';
 const URL_SHOWN = `http://${WEB_HOST === '0.0.0.0' ? 'localhost' : WEB_HOST}:${WEB_PORT}`;
 const env = { ...process.env, RUNNERS_API_URL: `http://127.0.0.1:${API_PORT}` };
+const SITE_LOG = join(HERE, '../site.log');
 
 async function siteIsUp() {
   try {
@@ -84,11 +85,13 @@ export async function startWeb(openUrl = URL_SHOWN) {
       console.error(red('The runners carry on without the web dashboard.'));
       return;
     }
+    // Its output goes to site.log, to see why it stopped if it ever does.
+    const log = openSync(SITE_LOG, 'a');
     spawn(process.execPath, [join(HERE, 'site.mjs')], {
       env,
       detached: true,
       windowsHide: true,
-      stdio: 'ignore',
+      stdio: ['ignore', log, log],
     }).unref();
   }
   console.log(`Web dashboard: ${openUrl} ${dim('(keeps running after the runners stop; pnpm site:stop ends it)')}`);

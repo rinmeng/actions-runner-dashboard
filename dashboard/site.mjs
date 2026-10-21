@@ -6,5 +6,10 @@
 
 import { runSite, stopSite } from './web.mjs';
 
-if (process.argv.includes('stop')) stopSite();
-else runSite();
+if (process.argv.includes('stop')) {
+  stopSite();
+} else {
+  console.log(`${new Date().toISOString()} site starting (pid ${process.pid})`);
+  process.on('exit', (code) => console.log(`${new Date().toISOString()} site exiting with code ${code}`));
+  runSite();
+}
