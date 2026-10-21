@@ -6,6 +6,7 @@ import { join } from 'node:path';
 
 import {
   allView,
+  events,
   MAX_LINES,
   plain,
   runners,
@@ -38,17 +39,18 @@ function append(view, entry) {
   if (view.scroll > 0) view.scroll = Math.min(view.scroll + 1, view.lines.length - 1);
 }
 
+let lastLineId = 0;
+
 // Entries are shared by the runner's view and the "All runners" view, so a
-// line rewritten later (see describeJob) changes in both.
+// line rewritten later (see describeJob) changes in both. Without the terminal
+// UI they are still kept, for the web dashboard.
 function push(runner, text) {
-  const entry = { runner, text };
-  if (plain) {
-    process.stdout.write(`${tag(runner)} ${text}${RESET}\n`);
-    return entry;
-  }
+  const entry = { id: ++lastLineId, at: Date.now(), runner, text };
+  if (plain) process.stdout.write(`${tag(runner)} ${text}${RESET}\n`);
   append(runner, entry);
   append(allView, entry);
-  if (runner !== selectedView()) runner.unread = true;
+  if (!plain && runner !== selectedView()) runner.unread = true;
+  events.emit('line', entry);
   scheduleRender();
   return entry;
 }
@@ -161,6 +163,7 @@ async function describeJob(runner, job, entry, timestamp) {
   if (runner.last && runner.last.startedAt === job.startedAt) Object.assign(runner.last, context);
   entry.text = `${timestamp} ${bold(`@${job.actor}`)} (${prLink(job)}) requested: ${job.workflow} › ${bold(job.name)}`;
   if (plain) process.stdout.write(`${tag(runner)} ${entry.text}${RESET}\n`);
+  events.emit('line-update', entry);
   scheduleRender();
 }
 

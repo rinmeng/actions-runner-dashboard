@@ -1,7 +1,9 @@
 # actions-runner-dashboard
 
 Set up and run several self-hosted GitHub Actions runners on one Windows machine,
-watched from a terminal dashboard. Plain Node, no dependencies.
+watched from a terminal dashboard or a web dashboard. The runners and the terminal
+dashboard are plain Node with no dependencies; the web dashboard (`web/`) is Next.js
+with shadcn/ui.
 
 - **Setup:** one command downloads the runner (checksum-verified) and creates and
   registers as many runner folders as you want, for a repo or an org.
@@ -11,7 +13,8 @@ watched from a terminal dashboard. Plain Node, no dependencies.
 - **Who and which PR:** each job start shows who asked for it, with a clickable PR link:
   `2026-10-19 21:39:59Z @user (PR #210) requested: Frontend CI › Lint, format & typecheck`
 - **Usage:** live CPU, RAM and GPU use for the whole machine and for the runners' own
-  process trees, plus the max seen this session.
+  process trees, plus the max seen this session; disk space, network speed and
+  temperatures with their session min and max.
 - **Clean shutdown:** `q` / Ctrl+C stops every runner cleanly so each one ends its
   GitHub session. Force-killing a runner leaves the session behind, and the next
   start fails with "A session for this runner already exists".
@@ -93,6 +96,41 @@ A handy alias: `alias runners='node ~/actions-runners/actions-runner-dashboard/d
 | click a PR | open it in the browser |
 | q, Ctrl+C | stop all runners cleanly (again to force) |
 
+## Web dashboard
+
+The same dashboard in the browser: the runner list, live colored logs (all runners or
+one), clickable PR links, a restart button for stopped runners, and the usage stats.
+
+```sh
+cd web && pnpm install && cd ..   # once
+pnpm web              # or: node dashboard/index.mjs --web
+```
+
+This runs the runners without the terminal UI (their output still goes to the console),
+builds the web app on first run, and serves it at <http://127.0.0.1:3130>. Ctrl+C stops
+every runner cleanly, as `q` does in the terminal dashboard. After changing `web/`, run
+`pnpm web:build` before the next start.
+
+A handy alias: `alias runners-web='node ~/actions-runners/actions-runner-dashboard/dashboard/index.mjs --web'`.
+
+- Only one of `runners` and `runners-web` can run at a time, since both run the runners.
+  The terminal dashboard serves the same API, so `pnpm web:dev` works next to it while
+  working on `web/`.
+- Both servers listen on 127.0.0.1 only. To reach the dashboard from elsewhere, put a
+  tunnel such as `cloudflared` in front of port 3130, **with access control** (for
+  example Cloudflare Access): anyone who can open it sees your logs and can restart runners.
+
+| Setting | Default |
+| --- | --- |
+| `RUNNERS_WEB_PORT` | `3130`, the web dashboard |
+| `RUNNERS_WEB_HOST` | `127.0.0.1` |
+| `RUNNERS_API_PORT` | `7130`, the runners' API the web dashboard reads (127.0.0.1 only) |
+
+Temperatures (and network speed) come from [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+when it is running with its web server on (Options › Remote Web Server, port 8085).
+Without it, GPU temperature falls back to `nvidia-smi`, network speed to Windows'
+counters, and the CPU and SSD temperatures show `—`.
+
 ## How it works
 
 - Each runner is started as `bin\Runner.Listener.exe run` with its own hidden console.
@@ -106,6 +144,10 @@ A handy alias: `alias runners='node ~/actions-runners/actions-runner-dashboard/d
   runner's newest `_diag/Worker_*.log`, so no API calls are needed.
 - Usage comes from Windows performance counters, sampled every 2 seconds by one
   long-running PowerShell process.
+- The runners' process serves a small API on 127.0.0.1 (`dashboard/api.mjs`): a
+  server-sent event stream of state and log lines, with colors already turned into
+  styled segments, and a restart endpoint. The web app proxies it under `/api`, so a
+  tunnel only needs the one port.
 
 Not supported: macOS/Linux, and runners installed as a Windows service.
 

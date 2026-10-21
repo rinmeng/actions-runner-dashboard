@@ -1,16 +1,19 @@
 // Runs every local GitHub Actions runner in one terminal, with a section per runner.
 //
 //   pnpm start (or `runners`)   click or ↑/↓ to pick a runner; q stops them all cleanly
+//   pnpm web (or `runners-web`) the same in the browser (web/), Ctrl+C stops them all
 //
 // No dependencies on purpose. Runners are the actions-runner, actions-runner-2, …
 // folders with a .runner config in RUNNERS_HOME (default: the folder this repo is
 // cloned into). `runners.sh status` shows what each one is doing on GitHub's side.
 
+import { startApi } from './api.mjs';
 import { forceKill, quit, runnersAlreadyRunning, start } from './runners.mjs';
-import { home, plain, runners, scheduleRender, setRenderer } from './state.mjs';
+import { home, plain, runners, scheduleRender, setRenderer, web } from './state.mjs';
 import { restoreTerminal, setupTerminal } from './terminal.mjs';
 import { onInput, render } from './ui.mjs';
 import { startUsageSampler } from './usage.mjs';
+import { startWeb } from './web.mjs';
 
 if (runners.length === 0) {
   console.error(`No configured runners found in ${home}. Set RUNNERS_HOME to the folder that holds them.`);
@@ -35,9 +38,13 @@ process.on('uncaughtException', (error) => {
 if (!plain) {
   setRenderer(render);
   setupTerminal(onInput);
+}
+if (!plain || web) {
   // Keeps the job timers ticking.
   setInterval(scheduleRender, 1000);
   startUsageSampler();
 }
+startApi();
+if (web) startWeb();
 for (const runner of runners) start(runner);
 scheduleRender();

@@ -1,13 +1,16 @@
 // State shared by the modules. Mutable values live on `state` because importers
 // can't reassign an imported `let`.
 
+import { EventEmitter } from 'node:events';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const system32 = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32');
 export const gitBashDir = join(process.env.ProgramFiles ?? 'C:\\Program Files', 'Git', 'usr', 'bin');
-export const plain = !process.stdout.isTTY || !process.stdin.isTTY;
+// `--web` runs without the terminal UI, for the web dashboard (see api.mjs).
+export const web = process.argv.includes('--web');
+export const plain = web || !process.stdout.isTTY || !process.stdin.isTTY;
 export const MAX_LINES = 5000;
 export const SIDEBAR_WIDTH = 42;
 // 1-based screen column where log text starts: sidebar, border, one space.
@@ -69,6 +72,11 @@ export const state = {
 
 export const selectedView = () => views[state.selectedIndex];
 
+// For the web dashboard's API: "line" (a new entry), "line-update" (an entry rewritten)
+// and "change" (anything the sidebar shows).
+export const events = new EventEmitter();
+events.setMaxListeners(0);
+
 let renderer = () => {};
 let renderPending = false;
 
@@ -77,6 +85,7 @@ export function setRenderer(render) {
 }
 
 export function scheduleRender() {
+  events.emit('change');
   if (plain || renderPending) return;
   renderPending = true;
   setTimeout(() => {
