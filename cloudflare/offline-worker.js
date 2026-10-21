@@ -4,9 +4,9 @@
 // "Host Error". /api/status answers { online: false }, so the runner-status workflow
 // still reports the runners as offline.
 //
-// The page is a static copy of the web dashboard (web/): the same sidebar, header, stat
-// cards and log panel, with every reading blank and the status badge saying Offline.
-// Keep it in step when the dashboard's layout changes.
+// The page is a static copy of the web dashboard (web/): the same sidebar and header, with
+// the status badge saying Offline, and the log panel taking the rest of the screen in place
+// of the stat cards. Keep it in step when the dashboard's layout changes.
 //
 // Set up in the Cloudflare dashboard: Workers & Pages > Create > Worker, paste this file,
 // deploy, then the worker's Settings > Domains & Routes > Add route: services.web8th.com/*
@@ -36,13 +36,6 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
-  cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
-  ram: '<path d="M6 19v-3"/><path d="M10 19v-3"/><path d="M14 19v-3"/><path d="M18 19v-3"/><path d="M8 11V9"/><path d="M16 11V9"/><path d="M12 11V9"/><path d="M2 15h20"/><path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"/>',
-  gauge: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
-  thermometer: '<path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>',
-  network:
-    '<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
-  disk: '<path d="M22 12H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01"/><path d="M10 16h.01"/>',
   terminal: '<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
 };
 const icon = (name, size = 16) =>
@@ -58,24 +51,6 @@ const runnerItems = Array.from(
         <span class="job">Not running</span>
       </li>`,
 ).join('');
-
-// CPU, RAM or GPU, with nothing to show.
-const usageCard = (title, iconName) => `
-    <section class="card">
-      <div class="card-title">${icon(iconName)}<h2>${title}</h2></div>
-      <div class="big-row"><span class="big">${DASH}</span><span class="small">runners <b class="amber">${DASH}</b></span></div>
-      <div class="bar"></div>
-      <div class="max"><span class="max-label">Max</span><span><i class="dot-sm dot-all"></i>all <b>${DASH}</b></span><span><i class="dot-sm dot-runners"></i>runners <b class="amber">${DASH}</b></span></div>
-    </section>`;
-
-const rangeCard = (title, iconName, rows) => `
-    <section class="card">
-      <div class="card-title">${icon(iconName)}<h2>${title}</h2></div>
-      <table>
-        <thead><tr><th></th><th>now</th><th>min</th><th>max</th></tr></thead>
-        <tbody>${rows.map((row) => `<tr><td>${row}</td><td class="now">${DASH}</td><td>${DASH}</td><td>${DASH}</td></tr>`).join('')}</tbody>
-      </table>
-    </section>`;
 
 const PAGE = `<!doctype html>
 <html lang="en">
@@ -172,32 +147,6 @@ const PAGE = `<!doctype html>
   }
 
   .content { flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 16px; }
-  .grid { display: grid; gap: 12px; }
-  @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  .card { background: var(--card); border-radius: 1.625rem; padding: 16px; display: grid; gap: 8px; align-content: start;
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%), 0 0 0 1px var(--ring); }
-  .card-title { display: flex; align-items: center; gap: 8px; }
-  .card-title svg { color: var(--muted-foreground); }
-  .card-title h2 { font-size: 14px; font-weight: 500; }
-  .big-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .big { font-size: 24px; font-weight: 600; }
-  .small { font-size: 12px; color: var(--muted-foreground); }
-  .bar { height: 6px; border-radius: 999px; background: var(--muted); }
-  .max { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted-foreground); white-space: nowrap; }
-  .max b { color: var(--foreground); }
-  .max b.amber { color: var(--amber); }
-  .max-label { font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
-  .max span { display: flex; align-items: center; gap: 6px; }
-  .dot-sm { display: block; flex: none; width: 6px; height: 6px; border-radius: 50%; }
-  .dot-all { background: var(--primary); }
-  .dot-runners { background: oklch(0.769 0.188 70.08); }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
-  th { font-weight: 400; color: var(--muted-foreground); text-align: right; height: 28px; border-bottom: 1px solid var(--border); }
-  td { padding: 4px 0; text-align: right; color: var(--muted-foreground); }
-  td:first-child { text-align: left; }
-  td.now { color: var(--foreground); font-size: 14px; font-weight: 500; }
-
   .log { min-height: 24rem; flex: 1; display: flex; flex-direction: column; border-radius: 12px; background: var(--card);
          box-shadow: 0 0 0 1px var(--ring); overflow: hidden; }
   .log-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px; border-bottom: 1px solid var(--border);
@@ -239,19 +188,6 @@ const PAGE = `<!doctype html>
       </div>
     </header>
     <div class="content">
-      <div class="grid">
-        ${usageCard('CPU', 'cpu')}
-        ${usageCard('RAM', 'ram')}
-        ${usageCard('GPU', 'gauge')}
-        ${rangeCard('Temperature', 'thermometer', ['CPU', 'GPU', 'Hot spot', 'RAM', 'SSD'])}
-        ${rangeCard('Network', 'network', ['↓ Down', '↑ Up'])}
-        <section class="card">
-          <div class="card-title">${icon('disk')}<h2>Disk</h2></div>
-          <div class="big-row"><span class="big">${DASH}</span><span class="small">free</span></div>
-          <div class="bar"></div>
-          <div class="max">${DASH} used</div>
-        </section>
-      </div>
       <section class="log">
         <div class="log-head"><b>${icon('terminal', 14)}All runners' output</b>4 lines</div>
 <pre><span class="err">● ${OWNER}'s runners are offline.</span>
