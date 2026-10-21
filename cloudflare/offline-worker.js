@@ -152,14 +152,13 @@ const PAGE = `<!doctype html>
   .vsep { width: 1px; height: 16px; background: var(--border); margin-right: 4px; }
   .titles { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
   .title-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
-  .title-text h1 { font-size: 16px; font-weight: 600; }
+  .title-row { display: flex; align-items: center; gap: 8px; }
+  .title-text h1 { font-size: 16px; font-weight: 600; white-space: nowrap; }
   .title-text p { font-size: 12px; color: var(--muted-foreground); }
   .status { display: flex; align-items: center; gap: 8px; }
   .uptime { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); }
   .uptime b { color: var(--foreground); }
-  .uptime-lines { display: grid; line-height: 1.25; }
-  .time { font-size: 12px; font-variant-numeric: tabular-nums; }
-  .badge { height: 28px; padding: 0 10px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);
+  .badge { height: 24px; flex-shrink: 0; padding: 0 10px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);
            border-radius: 999px; font-weight: 500; }
   .badge .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
   .dark .sun, :root:not(.dark) .moon { display: block; }
@@ -230,12 +229,11 @@ const PAGE = `<!doctype html>
       <span class="vsep"></span>
       <div class="titles">
         <div class="title-text">
-          <h1>All runners</h1>
+          <div class="title-row"><h1>All runners</h1><span class="badge"><span class="live-dot"></span>Offline</span></div>
           <p>Every runner's output as it happens. Pick one on the left to see only its logs.</p>
         </div>
         <div class="status">
-          <span class="uptime">${icon('clock')}<span class="uptime-lines"><span title="PC uptime"><span class="uptime-label">PC uptime </span><b>${DASH}</b></span><span class="time" id="time"></span></span></span>
-          <span class="badge"><span class="live-dot"></span>Offline</span>
+          <span class="uptime" title="PC uptime">${icon('clock')}<span class="uptime-label">PC uptime</span><b>${DASH}</b></span>
           <button class="icon-btn" id="theme" aria-label="Toggle dark mode"><span class="sun">${icon('sun')}</span><span class="moon">${icon('moon')}</span></button>
         </div>
       </div>
@@ -265,11 +263,6 @@ Jobs for these runners wait in GitHub's queue until they're back. Ping ${OWNER} 
   </main>
 </div>
 <script>
-  // The time in Pacific, under the uptime as on the dashboard.
-  const pacific = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', second: '2-digit' });
-  const tick = () => (document.getElementById('time').textContent = pacific.format(new Date()) + ' PT');
-  tick();
-  setInterval(tick, 1000);
   const layout = document.getElementById('layout');
   const phone = matchMedia('(max-width: 767px)');
   document.getElementById('sidebar').onclick = () => layout.classList.toggle(phone.matches ? 'open' : 'collapsed');
