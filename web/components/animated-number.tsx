@@ -40,7 +40,9 @@ export function AnimatedNumber<T extends number | null | undefined>({
 
   const chars = [...text]
   return (
-    <span className={cn("inline-block tabular-nums", className)}>
+    // overflow-y: clip keeps rolling digits inside the line, so a scrolling ancestor (a table,
+    // the sidebar) never flashes a scrollbar. Unlike hidden it leaves the baseline alone.
+    <span className={cn("inline-block overflow-y-clip tabular-nums", className)}>
       <span className="sr-only">{text}</span>
       <span aria-hidden>
         {/* One slot per place value, counted from the right (ones, tens, ...), so a place keeps its
