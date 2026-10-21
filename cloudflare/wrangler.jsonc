@@ -1,0 +1,9 @@
+// Deploys offline-worker.js as the "runners-offline" Worker. Cloudflare's Git integration
+// (Workers Builds, root directory "cloudflare") runs `npx wrangler deploy` with this on each
+// push. The route (e.g. services.web8th.com/*) is set in the dashboard, so it isn't here.
+{
+  "name": "runners-offline",
+  "main": "offline-worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true
+}

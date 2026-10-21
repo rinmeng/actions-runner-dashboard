@@ -6,7 +6,9 @@
 //
 // Set up in the Cloudflare dashboard: Workers & Pages > Create > Worker, paste this file,
 // deploy, then the worker's Settings > Domains & Routes > Add route: services.web8th.com/*
-// (zone web8th.com). The free plan's 100,000 requests a day is plenty.
+// (zone web8th.com), as a Route, not a Custom Domain. The free plan's 100,000 requests a
+// day is plenty. To redeploy on push instead of pasting, connect the Worker to this repo
+// (Settings > Build) with root directory "cloudflare"; wrangler.jsonc is its config.
 
 // Same wording as the dashboard's own offline screen (web/.env.local).
 const OWNER = 'Rin';
