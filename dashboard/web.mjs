@@ -76,8 +76,9 @@ export function stopSite() {
   console.log(`Stopped the web dashboard at ${URL_SHOWN}.`);
 }
 
-// For `--web`: starts the site in the background unless it is already up, then opens it.
-export async function startWeb() {
+// For `--web`: starts the site in the background unless it is already up, then opens
+// it, or `openUrl` instead (the tunnel's public address) once that answers.
+export async function startWeb(openUrl = URL_SHOWN) {
   if (!(await siteIsUp())) {
     if (!ensureBuilt()) {
       console.error(red('The runners carry on without the web dashboard.'));
@@ -90,14 +91,16 @@ export async function startWeb() {
       stdio: 'ignore',
     }).unref();
   }
-  console.log(`Web dashboard: ${URL_SHOWN} ${dim('(keeps running after the runners stop; pnpm site:stop ends it)')}`);
-  if (process.env.RUNNERS_WEB_OPEN !== '0') void openWhenReady(URL_SHOWN);
+  console.log(`Web dashboard: ${openUrl} ${dim('(keeps running after the runners stop; pnpm site:stop ends it)')}`);
+  if (process.env.RUNNERS_WEB_OPEN !== '0') void openWhenReady(openUrl);
 }
 
-// Opens the dashboard in the default browser once the server answers.
+// Opens the dashboard in the default browser once it answers there; through a tunnel,
+// Cloudflare answers with an error until the tunnel connects.
 async function openWhenReady(url) {
   for (let attempt = 0; attempt < 120; attempt++) {
-    if (await siteIsUp()) {
+    const response = await fetch(url, { signal: AbortSignal.timeout(3000) }).catch(() => null);
+    if (response?.ok) {
       spawn('rundll32.exe', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
       return;
     }

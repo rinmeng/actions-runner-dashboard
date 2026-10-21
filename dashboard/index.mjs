@@ -14,7 +14,7 @@ import { home, plain, runners, scheduleRender, setRenderer, web } from './state.
 import { restoreTerminal, setupTerminal } from './terminal.mjs';
 import { onInput, render } from './ui.mjs';
 import { startUsageSampler } from './usage.mjs';
-import { startTunnel } from './tunnel.mjs';
+import { publicUrl, startTunnel } from './tunnel.mjs';
 import { startWeb } from './web.mjs';
 
 if (runners.length === 0) {
@@ -47,7 +47,9 @@ if (!plain || web) {
   startUsageSampler();
 }
 startApi();
-if (web) void startWeb();
-if (web && process.argv.includes('--tunnel')) startTunnel();
+const tunnel = web && process.argv.includes('--tunnel');
+if (tunnel) startTunnel();
+// With a tunnel, the public address is the one to open.
+if (web) void startWeb((tunnel && publicUrl()) || undefined);
 for (const runner of runners) start(runner);
 scheduleRender();

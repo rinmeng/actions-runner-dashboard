@@ -121,7 +121,8 @@ pnpm web:tunnel       # pnpm web, plus a Cloudflare tunnel to the site
 pnpm tunnel:stop      # stop the tunnel
 ```
 
-`web:tunnel` runs `cloudflared tunnel run` with your `~/.cloudflared/config.yml`
+`web:tunnel` opens the tunnel's public address (the `hostname` in your config) instead
+of the local one, and runs `cloudflared tunnel run` with your `~/.cloudflared/config.yml`
 (pointing at `http://127.0.0.1:3130`), in the background like the site so it stays up
 after the runners stop. It logs to `tunnel.log`; set `CLOUDFLARED` if cloudflared isn't
 in its default install folder.

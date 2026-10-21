@@ -5,7 +5,8 @@
 //   node dashboard/tunnel.mjs stop    (pnpm tunnel:stop)
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,6 +17,18 @@ import { dim, red } from './text.mjs';
 const INSTALLED = join(process.env['ProgramFiles(x86)'] ?? 'C:\\Program Files (x86)', 'cloudflared', 'cloudflared.exe');
 const CLOUDFLARED = process.env.CLOUDFLARED ?? (existsSync(INSTALLED) ? INSTALLED : 'cloudflared');
 const LOG_FILE = join(dirname(fileURLToPath(import.meta.url)), '../tunnel.log');
+
+// The tunnel's public address, from the first `hostname:` in ~/.cloudflared/config.yml,
+// e.g. "https://services.example.com"; null without one.
+export function publicUrl() {
+  try {
+    const config = readFileSync(join(homedir(), '.cloudflared', 'config.yml'), 'utf8');
+    const hostname = /^\s*-?\s*hostname:\s*["']?([^\s"']+)/m.exec(config)?.[1];
+    return hostname ? `https://${hostname}` : null;
+  } catch {
+    return null;
+  }
+}
 
 // Process ids of running `cloudflared … tunnel … run`, however they were started.
 function tunnelProcesses() {
