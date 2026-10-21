@@ -36,22 +36,25 @@ while ($true) {
   Start-Sleep -Seconds ${SAMPLE_SECONDS}
 }`;
 
-// Every process started by a runner's listener: its worker, and the job's shells, node, python, ….
-function runnerProcessIds(procs) {
+// Every process started by each runner's listener: its worker, and the job's shells,
+// node, python, …, as pid → that runner's position in `runners`.
+function runnerProcesses(procs) {
   const children = new Map();
   for (const [pid, parent] of procs) {
     if (!children.has(parent)) children.set(parent, []);
     children.get(parent).push(pid);
   }
-  const ids = new Set();
-  const queue = runners.flatMap((runner) => (runner.child?.pid ? [runner.child.pid] : []));
-  while (queue.length) {
-    const pid = queue.pop();
-    if (ids.has(pid)) continue;
-    ids.add(pid);
-    queue.push(...(children.get(pid) ?? []));
-  }
-  return ids;
+  const owners = new Map();
+  runners.forEach((runner, position) => {
+    const queue = runner.child?.pid ? [runner.child.pid] : [];
+    while (queue.length) {
+      const pid = queue.pop();
+      if (owners.has(pid)) continue;
+      owners.set(pid, position);
+      queue.push(...(children.get(pid) ?? []));
+    }
+  });
+  return owners;
 }
 
 // Like Task Manager: add up each engine's use across processes, then report the busiest engine.
@@ -86,6 +89,9 @@ function sensorList(node, hardware = '', list = []) {
 
 function pickSensors(list) {
   const find = (id, name) => list.find((sensor) => id.test(sensor.id) && name.test(sensor.name))?.value ?? null;
+  // A sensor LibreHardwareMonitor hasn't polled yet reads 0 °C (the SSD's, for its first
+  // seconds); recorded, it would stay the session's minimum.
+  const temp = (id, name) => find(id, name) || null;
   // WSL's virtual adapter would count its traffic a second time.
   const nics = list.filter((sensor) => sensor.id.startsWith('/nic/') && !sensor.hardware.startsWith('vEthernet'));
   const rate = (name) => nics.filter((sensor) => sensor.name === name).reduce((sum, sensor) => sum + sensor.value, 0);
@@ -93,10 +99,10 @@ function pickSensors(list) {
   const disk = (name) =>
     list.find((sensor) => sensor.hardware === state.specs?.disk?.name && sensor.name === name)?.value ?? null;
   return {
-    cpuTemp: find(/^\/(amd|intel)cpu\/.*\/temperature\//, /Tctl|Package/),
-    gpuTemp: find(/^\/gpu-nvidia\/.*\/temperature\//, /^GPU Core$/),
-    gpuHotSpot: find(/^\/gpu-nvidia\/.*\/temperature\//, /Hot Spot/),
-    ssdTemp: find(/^\/nvme\/.*\/temperature\//, /Composite/),
+    cpuTemp: temp(/^\/(amd|intel)cpu\/.*\/temperature\//, /Tctl|Package/),
+    gpuTemp: temp(/^\/gpu-nvidia\/.*\/temperature\//, /^GPU Core$/),
+    gpuHotSpot: temp(/^\/gpu-nvidia\/.*\/temperature\//, /Hot Spot/),
+    ssdTemp: temp(/^\/nvme\/.*\/temperature\//, /Composite/),
     net: nics.length ? { down: rate('Download Speed'), up: rate('Upload Speed') } : null,
     diskRead: disk('Read Rate'),
     diskWrite: disk('Write Rate'),
@@ -168,19 +174,26 @@ function readSpecs() {
 
 function summarize(sample) {
   const threads = availableParallelism();
-  const ids = runnerProcessIds(sample.procs);
-  let runnerCpu = 0;
-  let runnerRam = 0;
+  const owners = runnerProcesses(sample.procs);
+  // Each runner's share, in the order of `runners`, for the web dashboard's stacked bars.
+  const cpuBy = runners.map(() => 0);
+  const ramBy = runners.map(() => 0);
   for (const [pid, , cpu, ram] of sample.procs) {
-    if (!ids.has(pid)) continue;
-    runnerCpu += cpu;
-    runnerRam += ram;
+    if (!owners.has(pid)) continue;
+    cpuBy[owners.get(pid)] += cpu / threads;
+    ramBy[owners.get(pid)] += ram;
   }
+  const sum = (values) => values.reduce((total, value) => total + value, 0);
+  const gpuBy = runners.map((_, position) => busiestEngine(sample.engines, (pid) => owners.get(pid) === position));
   return {
     threads,
-    cpu: { used: sample.cpu / threads, runners: runnerCpu / threads },
-    ram: { total: totalmem(), used: totalmem() - freemem(), runners: runnerRam },
-    gpu: { used: busiestEngine(sample.engines, () => true), runners: busiestEngine(sample.engines, (pid) => ids.has(pid)) },
+    cpu: { used: sample.cpu / threads, runners: sum(cpuBy), byRunner: cpuBy },
+    ram: { total: totalmem(), used: totalmem() - freemem(), runners: sum(ramBy), byRunner: ramBy },
+    gpu: {
+      used: busiestEngine(sample.engines, () => true),
+      runners: busiestEngine(sample.engines, (pid) => owners.has(pid)),
+      byRunner: gpuBy,
+    },
     // Read and write rates are bytes per second, or null without LibreHardwareMonitor.
     disk: { ...diskSpace(), read: sensors.diskRead ?? null, write: sensors.diskWrite ?? null },
     net: sensors.net ?? { down: sample.net[0], up: sample.net[1] },

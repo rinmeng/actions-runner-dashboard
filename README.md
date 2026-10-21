@@ -177,6 +177,7 @@ jobs:
 
 Temperatures (and network speed) come from [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
 when it is running with its web server on (Options › Remote Web Server, port 8085).
+Turn on Options › Run On Windows Startup too, or those readings go blank after a reboot.
 Without it, GPU temperature falls back to `nvidia-smi`, network speed to Windows'
 counters, and the CPU and SSD temperatures show `—`.
 

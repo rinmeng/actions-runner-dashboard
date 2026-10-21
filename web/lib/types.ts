@@ -49,7 +49,9 @@ export type Runner = {
   last: Job | null
 }
 
-type Share = { used: number; runners: number }
+type Peak = { used: number; runners: number }
+// Each runner's share, in the order of `runners`.
+type Share = Peak & { byRunner?: number[] }
 
 export type Usage = {
   threads: number
@@ -87,7 +89,7 @@ export type DashboardState = {
   uptime: number
   quitting: boolean
   usage: Usage | null
-  peak: { cpu: Share; ram: Share; gpu: Share } | null
+  peak: { cpu: Peak; ram: Peak; gpu: Peak } | null
   // Lowest and highest this session, by "group.name" (e.g. "temp.cpu").
   range: Record<string, { min: number; max: number }>
   specs: Specs | null

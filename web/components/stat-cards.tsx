@@ -1,33 +1,46 @@
 import { Cpu, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { celsius, gigabytes, percent, specLines, speed } from "@/lib/format"
-import type { DashboardState } from "@/lib/types"
+import { runnerColor } from "@/lib/status"
+import type { DashboardState, Runner, Usage } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const clamp = (value: number) => Math.min(100, Math.max(0, value))
-const THIN_TRACK = "*:data-[slot=progress-track]:h-1.5"
+const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
 
-// The machine's use, with the runners' own share as a second Progress laid over it
-// (Progress takes one value): a transparent track and an amber indicator.
-function UsageBar({ used, runners, label }: { used: number; runners?: number; label: string }) {
+type Share = Usage["cpu"]
+
+type Segment = { key: string; label: string; value: number; color: string }
+
+// The machine's use as one stacked bar: each runner's share in its color from the logs
+// (or the runners' total in amber, from an API without the split), then everything else.
+function UsageBar({ used, segments = [], label }: { used: number; segments?: Segment[]; label: string }) {
+  // Each segment's width, cut short so the stack never runs past the machine's total.
+  const widths = segments.reduce<number[]>(
+    (done, segment) => [...done, Math.min(clamp(used) - sum(done), Math.max(0, segment.value))],
+    []
+  )
   return (
-    <div className="relative">
-      <Progress value={clamp(used)} aria-label={label} className={THIN_TRACK} />
-      {runners !== undefined && (
-        <Progress
-          value={clamp(runners)}
-          aria-label={`${label}, runners' share`}
-          className={cn(
-            "absolute inset-0",
-            THIN_TRACK,
-            "*:data-[slot=progress-track]:bg-transparent **:data-[slot=progress-indicator]:bg-amber-500"
-          )}
+    <div
+      role="meter"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(clamp(used))}
+      className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
+    >
+      {segments.map((segment, index) => (
+        <div
+          key={segment.key}
+          title={segment.label}
+          className="h-full transition-all"
+          style={{ width: `${widths[index]}%`, backgroundColor: segment.color }}
         />
-      )}
+      ))}
+      <div className="h-full bg-primary transition-all" style={{ width: `${clamp(used) - sum(widths)}%` }} />
     </div>
   )
 }
@@ -76,25 +89,34 @@ function UsageCard({
   icon,
   hint,
   spec,
-  used,
-  runners,
+  share,
+  runnerList,
   maxUsed,
   maxRunners,
-  bar,
+  toPercent = (value) => value,
   format,
 }: {
   title: string
   icon: React.ComponentType<{ className?: string }>
   hint?: string
   spec?: string
-  used: number
-  runners: number
+  share: Share
+  runnerList: Runner[]
   maxUsed?: number
   maxRunners?: number
   // Bar lengths in percent, when the values aren't percentages already.
-  bar?: { used: number; runners: number }
+  toPercent?: (value: number) => number
   format: (value: number) => string
 }) {
+  const { used, runners, byRunner } = share
+  const segments: Segment[] = byRunner
+    ? runnerList.map((runner, position) => ({
+        key: String(runner.number),
+        label: `${runner.label}: ${format(byRunner[position] ?? 0)}`,
+        value: toPercent(byRunner[position] ?? 0),
+        color: runnerColor(position),
+      }))
+    : [{ key: "runners", label: `runners: ${format(runners)}`, value: toPercent(runners), color: "var(--color-amber-500)" }]
   return (
     <StatCard title={title} icon={icon} hint={hint} spec={spec}>
       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
@@ -103,7 +125,7 @@ function UsageCard({
           runners <span className="font-medium text-amber-600 tabular-nums dark:text-amber-400">{format(runners)}</span>
         </span>
       </div>
-      <UsageBar label={`${title} use`} used={bar?.used ?? used} runners={bar?.runners ?? runners} />
+      <UsageBar label={`${title} use`} used={toPercent(used)} segments={segments} />
       {maxUsed !== undefined && maxRunners !== undefined && (
         <p className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
           Max {format(maxUsed)} · runners {format(maxRunners)}
@@ -170,8 +192,8 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         icon={Cpu}
         hint={specs.cpu ? undefined : `${usage.threads} threads`}
         spec={specs.cpu}
-        used={usage.cpu.used}
-        runners={usage.cpu.runners}
+        share={usage.cpu}
+        runnerList={state.runners}
         maxUsed={peak?.cpu.used}
         maxRunners={peak?.cpu.runners}
         format={percent}
@@ -181,22 +203,19 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         icon={MemoryStick}
         hint={`of ${gigabytes(usage.ram.total)}`}
         spec={specs.ram}
-        used={usage.ram.used}
-        runners={usage.ram.runners}
+        share={usage.ram}
+        runnerList={state.runners}
         maxUsed={peak?.ram.used}
         maxRunners={peak?.ram.runners}
-        bar={{
-          used: (usage.ram.used / usage.ram.total) * 100,
-          runners: (usage.ram.runners / usage.ram.total) * 100,
-        }}
+        toPercent={(bytes) => (bytes / usage.ram.total) * 100}
         format={gigabytes}
       />
       <UsageCard
         title="GPU"
         icon={Gauge}
         spec={specs.gpu}
-        used={usage.gpu.used}
-        runners={usage.gpu.runners}
+        share={usage.gpu}
+        runnerList={state.runners}
         maxUsed={peak?.gpu.used}
         maxRunners={peak?.gpu.runners}
         format={percent}
