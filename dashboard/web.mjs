@@ -1,5 +1,6 @@
-// The Next.js web dashboard (web/). It runs as its own process (site.mjs) so it
-// stays up, saying the runners are offline, after the runners stop.
+// The Next.js web dashboard (web/). It runs as its own background process (site.mjs),
+// so Ctrl+C reaches only the runners and the page shows them stopping; `--web` stops
+// it on exit. `pnpm site` runs it alone, e.g. to keep it up without the runners.
 // Builds it first when there is no build yet. After changing web/: `pnpm site:stop`
 // (building under a running site breaks it), then `pnpm web:build`, then start it again.
 
@@ -97,7 +98,7 @@ export async function startWeb(openUrl = URL_SHOWN) {
       stdio: ['ignore', log, log],
     }).unref();
   }
-  console.log(`Web dashboard: ${openUrl} ${dim('(keeps running after the runners stop; pnpm site:stop ends it)')}`);
+  console.log(`Web dashboard: ${openUrl}`);
   if (process.env.RUNNERS_WEB_OPEN !== '0') void openWhenReady(openUrl);
 }
 

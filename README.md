@@ -111,9 +111,11 @@ builds the web app on first run, serves it at <http://127.0.0.1:3130> and opens 
 your browser (`RUNNERS_WEB_OPEN=0` to skip that). Ctrl+C stops
 every runner cleanly, as `q` does in the terminal dashboard.
 
-The site runs as its own background process, so it stays up after the runners stop and
-says they're offline, with who to ping and when they're usually on (`NEXT_PUBLIC_RUNNERS_OWNER`
-and `NEXT_PUBLIC_RUNNERS_HOURS` in `web/.env.local`; rebuild after changing them).
+The site runs as its own background process, so Ctrl+C reaches only the runners and the
+page shows them stopping; it goes down when they're done. While the runners are off
+(`pnpm site` alone), it says so, with who to ping and when they're usually on
+(`NEXT_PUBLIC_RUNNERS_OWNER` and `NEXT_PUBLIC_RUNNERS_HOURS` in `web/.env.local`; rebuild
+after changing them).
 
 ```sh
 pnpm site             # just the site, in the foreground (e.g. to start it at logon)
@@ -124,14 +126,15 @@ pnpm tunnel:stop      # stop the tunnel
 
 `web:tunnel` opens the tunnel's public address (the `hostname` in your config) instead
 of the local one, and runs `cloudflared tunnel run` with your `~/.cloudflared/config.yml`
-(pointing at `http://127.0.0.1:3130`), in the background like the site so it stays up
-after the runners stop. It logs to `tunnel.log`; set `CLOUDFLARED` if cloudflared isn't
-in its default install folder.
+(pointing at `http://127.0.0.1:3130`), in the background like the site, and stops it on
+exit too. It logs to `tunnel.log`; set `CLOUDFLARED` if cloudflared isn't in its default
+install folder. With the machine off the tunnel, Cloudflare shows an error; the Worker in
+`cloudflare/offline-worker.js` shows an offline page there instead (setup steps in the file).
 
 After changing `web/`: `pnpm site:stop`, then `pnpm web:build`, then start it again.
 Building while the site runs breaks the running site.
 
-A handy alias: `alias runners-web='node ~/actions-runners/actions-runner-dashboard/dashboard/index.mjs --web'`.
+A handy alias: `alias runners-web='node ~/actions-runners/actions-runner-dashboard/dashboard/index.mjs --web --tunnel'`.
 
 - Only one of `runners` and `runners-web` can run at a time, since both run the runners.
   The terminal dashboard serves the same API, so `pnpm web:dev` works next to it while

@@ -1,6 +1,6 @@
 // A Cloudflare tunnel to the web dashboard, for `--tunnel`. Runs `cloudflared tunnel run`,
-// which reads ~/.cloudflared/config.yml, in the background like the site, so the site
-// stays reachable (saying the runners are offline) after the runners stop.
+// which reads ~/.cloudflared/config.yml, in the background like the site; `--web --tunnel`
+// stops it on exit.
 //
 //   node dashboard/tunnel.mjs stop    (pnpm tunnel:stop)
 
@@ -57,7 +57,7 @@ export function startTunnel() {
   });
   child.on('error', (error) => console.error(red(`Tunnel not started (${CLOUDFLARED}): ${error.message}`)));
   child.unref();
-  console.log(`Tunnel started ${dim(`(log: ${LOG_FILE}; pnpm tunnel:stop ends it)`)}`);
+  console.log(`Tunnel started ${dim(`(log: ${LOG_FILE})`)}`);
 }
 
 export function stopTunnel() {

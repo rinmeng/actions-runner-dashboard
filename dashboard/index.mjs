@@ -14,8 +14,8 @@ import { home, plain, runners, scheduleRender, setRenderer, web } from './state.
 import { restoreTerminal, setupTerminal } from './terminal.mjs';
 import { onInput, render } from './ui.mjs';
 import { startUsageSampler } from './usage.mjs';
-import { publicUrl, startTunnel } from './tunnel.mjs';
-import { startWeb } from './web.mjs';
+import { publicUrl, startTunnel, stopTunnel } from './tunnel.mjs';
+import { startWeb, stopSite } from './web.mjs';
 
 if (runners.length === 0) {
   console.error(`No configured runners found in ${home}. Set RUNNERS_HOME to the folder that holds them.`);
@@ -51,5 +51,21 @@ const tunnel = web && process.argv.includes('--tunnel');
 if (tunnel) startTunnel();
 // With a tunnel, the public address is the one to open.
 if (web) void startWeb((tunnel && publicUrl()) || undefined);
+// The site and tunnel run in the background so Ctrl+C doesn't hit them mid-shutdown
+// (the page shows "Stopping" until the runners are done), then go down with the runners.
+// Without the machine, a Cloudflare Worker can show the offline page (cloudflare/).
+if (web) {
+  let stopped = false;
+  const stopBackground = () => {
+    if (stopped) return;
+    stopped = true;
+    if (tunnel) stopTunnel();
+    stopSite();
+  };
+  process.on('exit', stopBackground);
+  // Closing the window gives a process only seconds before Windows ends it, likely
+  // before the runners finish stopping, so take these down first.
+  process.on('SIGHUP', stopBackground);
+}
 for (const runner of runners) start(runner);
 scheduleRender();
