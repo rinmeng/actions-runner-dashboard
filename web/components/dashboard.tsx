@@ -147,9 +147,9 @@ export function Dashboard() {
         {connection === "closed" ? (
           <Offline />
         ) : (
-        /* Stats above the logs, or in a column beside them on wide screens. */
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 xl:flex-row-reverse xl:overflow-hidden">
-          <div className="shrink-0 xl:w-80 xl:overflow-y-auto 2xl:w-[36rem]">
+        /* Stats above the logs. */
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+          <div className="shrink-0">
             {state ? (
               <StatCards state={state} />
             ) : (
