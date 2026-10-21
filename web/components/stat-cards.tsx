@@ -157,9 +157,20 @@ function UsageCard({
       </div>
       <UsageBar label={`${title} use`} used={toPercent(used)} segments={segments} />
       {maxUsed !== undefined && maxRunners !== undefined && (
-        <p className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
-          Max {format(maxUsed)} · runners {format(maxRunners)}
-        </p>
+        // Peaks this session, each with a dot in its color from the bar and the line above.
+        <div className="flex items-center gap-3 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+          <span className="font-medium tracking-wide uppercase">Max</span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-primary" aria-hidden />
+            all
+            <span className="font-semibold text-foreground">{format(maxUsed)}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
+            runners
+            <span className="font-semibold text-amber-600 dark:text-amber-400">{format(maxRunners)}</span>
+          </span>
+        </div>
       )}
     </StatCard>
   )
