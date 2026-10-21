@@ -183,6 +183,23 @@ counters, and the CPU and SSD temperatures, clocks and fans show `—`. The CPU 
 motherboard header named CPU or Pump; an AIO run by its own software over USB (iCUE,
 NZXT CAM) isn't visible to LibreHardwareMonitor, so its fan doesn't show.
 
+### Failsafe
+
+If the runners' own share of the CPU, RAM or GPU (the colored part of each card's bar,
+not other programs' use) stays above its limit for 5 minutes in a row, every runner is
+stopped as `q` or Ctrl+C would, cancelling their jobs, and the dashboard exits. Each
+runner's log says why, and so does `failsafe.log`. Dropping below the limit restarts
+the count.
+
+| Setting | Default |
+| --- | --- |
+| `RUNNERS_LIMIT_CPU` | `90`, percent of all threads |
+| `RUNNERS_LIMIT_RAM` | `70`, percent of total RAM |
+| `RUNNERS_LIMIT_GPU` | `90`, percent of the busiest GPU engine |
+| `RUNNERS_LIMIT_MINUTES` | `5` |
+
+Set a limit to `0` to turn it off.
+
 ## How it works
 
 - Each runner is started as `bin\Runner.Listener.exe run` with its own hidden console.

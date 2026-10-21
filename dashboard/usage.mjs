@@ -7,6 +7,7 @@ import { statfsSync } from 'node:fs';
 import { availableParallelism, freemem, totalmem } from 'node:os';
 import { join, parse, resolve } from 'node:path';
 
+import { checkLimits } from './failsafe.mjs';
 import { home, runners, scheduleRender, state, system32 } from './state.mjs';
 
 const SAMPLE_SECONDS = 2;
@@ -259,6 +260,7 @@ export function startUsageSampler() {
     try {
       state.usage = summarize(JSON.parse(last));
       recordPeak(state.usage);
+      checkLimits(state.usage);
       scheduleRender();
     } catch {
       // A malformed sample; the next one replaces it.
