@@ -44,7 +44,7 @@ const PAGE = `<!doctype html>
   <div class="icon" aria-hidden="true">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="M12 2v4"/><path d="m2 2 20 20"/></svg>
   </div>
-  <h1>${OWNER}'s runners are offline</h1>
+  <h1>${OWNER}'s runners are offline.</h1>
   <p>Jobs for these runners wait in GitHub's queue until they're back. Ping ${OWNER} to turn them on.</p>
   <p class="hours">${HOURS}</p>
   <small>This page updates on its own once they're back.</small>
