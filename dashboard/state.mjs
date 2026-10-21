@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const system32 = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32');
+export const gitBashDir = join(process.env.ProgramFiles ?? 'C:\\Program Files', 'Git', 'usr', 'bin');
 export const plain = !process.stdout.isTTY || !process.stdin.isTTY;
 export const MAX_LINES = 5000;
 export const SIDEBAR_WIDTH = 42;

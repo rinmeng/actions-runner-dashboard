@@ -13,6 +13,7 @@ import {
   selectedView,
   state,
   system32,
+  gitBashDir,
 } from './state.mjs';
 import { restoreTerminal } from './terminal.mjs';
 import { bold, color, dim, link, red, RESET, sanitize, yellow } from './text.mjs';
@@ -180,6 +181,9 @@ export function start(runner) {
     // without that also reaching this process, pnpm or the shell.
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
+    // `shell: bash` steps run the first bash.exe on PATH. Launched from Explorer, that is
+    // System32's WSL bash, which mangles the Windows script path, so put Git Bash first.
+    env: { ...process.env, PATH: `${gitBashDir};${process.env.PATH}` },
   });
   runner.child = child;
   child.stdout.setEncoding('utf8');
