@@ -89,7 +89,8 @@ function sensorList(node, hardware = '', list = []) {
   return list;
 }
 
-const fastest = (fans) => (fans.length ? Math.max(...fans.map((fan) => fan.value)) : null);
+// The highest reading of several sensors, e.g. the fastest fan.
+const highest = (sensors) => (sensors.length ? Math.max(...sensors.map((sensor) => sensor.value)) : null);
 
 function pickSensors(list) {
   const find = (id, name) => list.find((sensor) => id.test(sensor.id) && name.test(sensor.name))?.value ?? null;
@@ -107,13 +108,19 @@ function pickSensors(list) {
     gpuTemp: temp(/^\/gpu-nvidia\/.*\/temperature\//, /^GPU Core$/),
     gpuHotSpot: temp(/^\/gpu-nvidia\/.*\/temperature\//, /Hot Spot/),
     ssdTemp: temp(/^\/nvme\/.*\/temperature\//, /Composite/),
+    // The hotter stick; each also reports its limits as "temperatures", hence the name.
+    ramTemp: highest(
+      list.filter(
+        (sensor) => /^\/memory\/dimm\/.*\/temperature\//.test(sensor.id) && /^DIMM #\d+$/.test(sensor.name) && sensor.value,
+      ),
+    ),
     // MHz. "Cores (Average)", not "Effective", which also counts the time cores sleep.
     cpuClock: find(/^\/(amd|intel)cpu\/.*\/clock\//, /^Cores \(Average\)$/),
     gpuClock: find(/^\/gpu-nvidia\/.*\/clock\//, /^GPU Core$/),
     // RPM of the fastest fan; the GPU's read 0 while the card is cool enough to stop them.
     // A cooler run by its own software over USB (iCUE, CAM) isn't in the tree at all.
-    cpuFan: fastest(list.filter((sensor) => /^\/lpc\/.*\/fan\//.test(sensor.id) && /CPU|Pump/i.test(sensor.name))),
-    gpuFan: fastest(list.filter((sensor) => /^\/gpu-nvidia\/.*\/fan\//.test(sensor.id))),
+    cpuFan: highest(list.filter((sensor) => /^\/lpc\/.*\/fan\//.test(sensor.id) && /CPU|Pump/i.test(sensor.name))),
+    gpuFan: highest(list.filter((sensor) => /^\/gpu-nvidia\/.*\/fan\//.test(sensor.id))),
     net: nics.length ? { down: rate('Download Speed'), up: rate('Upload Speed') } : null,
     diskRead: disk('Read Rate'),
     diskWrite: disk('Write Rate'),
@@ -217,12 +224,13 @@ function summarize(sample) {
       gpu: sensors.gpuTemp ?? null,
       gpuHotSpot: sensors.gpuHotSpot ?? null,
       ssd: sensors.ssdTemp ?? null,
+      ram: sensors.ramTemp ?? null,
     },
   };
 }
 
 // Readings that show their lowest and highest value this session, by "group.name".
-const RANGED = ['temp.cpu', 'temp.gpu', 'temp.gpuHotSpot', 'temp.ssd', 'net.down', 'net.up'];
+const RANGED = ['temp.cpu', 'temp.gpu', 'temp.gpuHotSpot', 'temp.ram', 'temp.ssd', 'net.down', 'net.up'];
 
 // Highest "used" and "runners" seen for each resource since the dashboard started,
 // and the lowest and highest of each RANGED reading.

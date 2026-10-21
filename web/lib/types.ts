@@ -69,6 +69,8 @@ export type Usage = {
     gpu: number | null
     gpuHotSpot: number | null
     ssd: number | null
+    // Older APIs leave it out.
+    ram?: number | null
   }
 }
 

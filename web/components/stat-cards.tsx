@@ -279,6 +279,7 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
           { label: "CPU", key: "temp.cpu", value: usage.temp.cpu },
           { label: "GPU", key: "temp.gpu", value: usage.temp.gpu },
           { label: "Hot spot", key: "temp.gpuHotSpot", value: usage.temp.gpuHotSpot },
+          { label: "RAM", key: "temp.ram", value: usage.temp.ram ?? null },
           { label: "SSD", key: "temp.ssd", value: usage.temp.ssd },
         ]}
       />

@@ -137,6 +137,7 @@ function usageRows() {
       ['CPU', 'temp.cpu'],
       ['GPU', 'temp.gpu'],
       ['Hot spot', 'temp.gpuHotSpot'],
+      ['RAM', 'temp.ram'],
       ['SSD', 'temp.ssd'],
     ]),
     { text: '' },
