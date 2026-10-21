@@ -175,8 +175,8 @@ function RangeCard({
   )
 }
 
-// A grid above the logs, one column beside them from xl up (see Dashboard).
-export const STAT_GRID = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1"
+// A grid above the logs, one column beside them from xl up and two from 2xl (see Dashboard).
+export const STAT_GRID = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-2"
 
 export function StatCards({ state, className }: { state: DashboardState; className?: string }) {
   const { usage, peak, range } = state
