@@ -16,7 +16,8 @@ const fontMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Actions runners",
-  description: "Self-hosted GitHub Actions runners: status, live logs and machine usage",
+  description:
+    "Self-hosted GitHub Actions runners: status, live logs and machine usage",
 }
 
 export default function RootLayout({
@@ -28,7 +29,12 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
+      className={cn(
+        "antialiased",
+        fontMono.variable,
+        "font-sans",
+        inter.variable
+      )}
     >
       <body>
         <ThemeProvider>

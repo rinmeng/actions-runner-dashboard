@@ -13,7 +13,12 @@ export function AnsiText({ segments }: { segments: Segment[] }) {
     const style =
       segment.fg === undefined
         ? undefined
-        : { color: typeof segment.fg === "number" ? `var(--ansi-${segment.fg})` : segment.fg }
+        : {
+            color:
+              typeof segment.fg === "number"
+                ? `var(--ansi-${segment.fg})`
+                : segment.fg,
+          }
     if (segment.url) {
       return (
         <a
@@ -21,7 +26,10 @@ export function AnsiText({ segments }: { segments: Segment[] }) {
           href={segment.url}
           target="_blank"
           rel="noreferrer"
-          className={cn(className, "underline decoration-dotted underline-offset-2 hover:decoration-solid")}
+          className={cn(
+            className,
+            "underline decoration-dotted underline-offset-2 hover:decoration-solid"
+          )}
           style={style}
         >
           {segment.text}

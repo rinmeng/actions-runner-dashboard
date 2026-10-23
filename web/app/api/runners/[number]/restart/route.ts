@@ -15,6 +15,9 @@ export async function POST(
     })
     return Response.json(await upstream.json(), { status: upstream.status })
   } catch {
-    return Response.json({ error: "The runners aren't running" }, { status: 503 })
+    return Response.json(
+      { error: "The runners aren't running" },
+      { status: 503 }
+    )
   }
 }

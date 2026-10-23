@@ -23,7 +23,8 @@ const RENDER_LIMIT = 5000
 // How close to the bottom (px) still counts as following the output.
 const PIN_THRESHOLD = 48
 
-const plainText = (line: Line) => line.segments.map((segment) => segment.text).join("")
+const plainText = (line: Line) =>
+  line.segments.map((segment) => segment.text).join("")
 
 export function LogView({
   title,
@@ -59,7 +60,9 @@ export function LogView({
     const element = scroller.current
     if (!element) return
     const onScroll = () => {
-      const atBottom = element.scrollHeight - element.scrollTop - element.clientHeight < PIN_THRESHOLD
+      const atBottom =
+        element.scrollHeight - element.scrollTop - element.clientHeight <
+        PIN_THRESHOLD
       setPinned(atBottom)
       if (atBottom) setSeenId(lastIdRef.current)
     }
@@ -74,13 +77,24 @@ export function LogView({
 
   let unseen = 0
   if (!pinned) {
-    for (let index = lines.length - 1; index >= 0 && lines[index].id > seenId; index--) unseen++
+    for (
+      let index = lines.length - 1;
+      index >= 0 && lines[index].id > seenId;
+      index--
+    )
+      unseen++
   }
 
   // Built only when copying: thousands of lines.
   const [copyText, setCopyText] = React.useState("")
   const prepareCopy = () =>
-    setCopyText(shown.map((line) => (tagFor ? `[runner ${line.runner}] ` : "") + plainText(line)).join("\n"))
+    setCopyText(
+      shown
+        .map(
+          (line) => (tagFor ? `[runner ${line.runner}] ` : "") + plainText(line)
+        )
+        .join("\n")
+    )
 
   return (
     <CodeBlock size="sm" className={cn("relative bg-card", className)}>
@@ -90,7 +104,11 @@ export function LogView({
           {title}
         </CodeBlockTitle>
         <span className="text-xs whitespace-nowrap tabular-nums">
-          <AnimatedNumber value={lines.length} format={(count) => count.toLocaleString()} /> {lines.length === 1 ? "line" : "lines"}
+          <AnimatedNumber
+            value={lines.length}
+            format={(count) => count.toLocaleString()}
+          />{" "}
+          {lines.length === 1 ? "line" : "lines"}
         </span>
         <CodeBlockActions>
           <Button
@@ -118,7 +136,11 @@ export function LogView({
             Showing the last {RENDER_LIMIT.toLocaleString()} lines.
           </CodeBlockLine>
         )}
-        {shown.length === 0 && <CodeBlockLine className="text-muted-foreground">No output yet.</CodeBlockLine>}
+        {shown.length === 0 && (
+          <CodeBlockLine className="text-muted-foreground">
+            No output yet.
+          </CodeBlockLine>
+        )}
         {shown.map((line) => (
           <CodeBlockLine
             key={line.id}
@@ -130,11 +152,20 @@ export function LogView({
         ))}
       </CodeBlockContent>
       {!pinned && (
-        <Button size="sm" variant="secondary" className="absolute right-6 bottom-4 shadow-md" onClick={jumpToBottom}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="absolute right-6 bottom-4 shadow-md"
+          onClick={jumpToBottom}
+        >
           <ArrowDown data-icon="inline-start" />
           {unseen > 0 ? (
             <>
-              <AnimatedNumber value={unseen} format={(count) => count.toLocaleString()} /> new
+              <AnimatedNumber
+                value={unseen}
+                format={(count) => count.toLocaleString()}
+              />{" "}
+              new
             </>
           ) : (
             "Latest"

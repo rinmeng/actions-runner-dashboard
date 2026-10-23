@@ -9,9 +9,17 @@ import { cn } from "@/lib/utils"
 // from the other side, both blurring, up when the value grew and down when it shrank. Digits
 // that didn't change stay still, and everything else (".", ",", "%", "$", " GB") never moves.
 const roll = {
-  enter: (direction: number) => ({ y: direction > 0 ? "60%" : "-60%", opacity: 0, filter: "blur(5px)" }),
+  enter: (direction: number) => ({
+    y: direction > 0 ? "60%" : "-60%",
+    opacity: 0,
+    filter: "blur(5px)",
+  }),
   center: { y: "0%", opacity: 1, filter: "blur(0px)" },
-  exit: (direction: number) => ({ y: direction > 0 ? "-60%" : "60%", opacity: 0, filter: "blur(5px)" }),
+  exit: (direction: number) => ({
+    y: direction > 0 ? "-60%" : "60%",
+    opacity: 0,
+    filter: "blur(5px)",
+  }),
 }
 // Quick, with only a little overshoot.
 const transition = { type: "spring", duration: 0.35, bounce: 0.15 } as const
@@ -31,18 +39,22 @@ export function AnimatedNumber<T extends number | null | undefined>({
   const [previous, setPrevious] = useState(value)
   const [direction, setDirection] = useState(1)
   if (value !== previous) {
-    if (typeof value === "number" && typeof previous === "number") setDirection(value >= previous ? 1 : -1)
+    if (typeof value === "number" && typeof previous === "number")
+      setDirection(value >= previous ? 1 : -1)
     setPrevious(value)
   }
 
   const text = format(value)
-  if (reduceMotion) return <span className={cn("tabular-nums", className)}>{text}</span>
+  if (reduceMotion)
+    return <span className={cn("tabular-nums", className)}>{text}</span>
 
   const chars = [...text]
   return (
     // overflow-y: clip keeps rolling digits inside the line, so a scrolling ancestor (a table,
     // the sidebar) never flashes a scrollbar. Unlike hidden it leaves the baseline alone.
-    <span className={cn("inline-block overflow-y-clip tabular-nums", className)}>
+    <span
+      className={cn("inline-block overflow-y-clip tabular-nums", className)}
+    >
       <span className="sr-only">{text}</span>
       <span aria-hidden>
         {/* One slot per place value, counted from the right (ones, tens, ...), so a place keeps its
@@ -68,7 +80,11 @@ export function AnimatedNumber<T extends number | null | undefined>({
                 exit="exit"
                 transition={transition}
               >
-                <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+                <AnimatePresence
+                  mode="popLayout"
+                  initial={false}
+                  custom={direction}
+                >
                   <motion.span
                     key={char}
                     className="inline-block"

@@ -4,7 +4,10 @@
 
 const API_URL = process.env.RUNNERS_API_URL ?? "http://127.0.0.1:7130"
 
-type Status = { quitting: boolean; runners: { label: string; status: string }[] }
+type Status = {
+  quitting: boolean
+  runners: { label: string; status: string }[]
+}
 
 export async function GET() {
   let status: Status | null = null
@@ -18,7 +21,8 @@ export async function GET() {
     // The runners aren't running; the site is.
   }
   const runners = status?.runners ?? []
-  const count = (name: string) => runners.filter((runner) => runner.status === name).length
+  const count = (name: string) =>
+    runners.filter((runner) => runner.status === name).length
   const busy = count("busy")
   const idle = count("idle")
   return Response.json(

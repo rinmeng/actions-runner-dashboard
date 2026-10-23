@@ -53,14 +53,18 @@ export function useDashboard() {
         setState(snapshot)
         setLines(snapshotLines)
       })
-      source.addEventListener("state", (event) => setState(JSON.parse(event.data)))
+      source.addEventListener("state", (event) =>
+        setState(JSON.parse(event.data))
+      )
       source.addEventListener("line", (event) => {
         pending.push(JSON.parse(event.data))
         schedule()
       })
       source.addEventListener("line-update", (event) => {
         const line: Line = JSON.parse(event.data)
-        const queued = pending.findIndex((candidate) => candidate.id === line.id)
+        const queued = pending.findIndex(
+          (candidate) => candidate.id === line.id
+        )
         if (queued !== -1) pending[queued] = line
         else updates.set(line.id, line)
         schedule()

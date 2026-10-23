@@ -16,11 +16,16 @@ export const speed = (bytes: number | null | undefined) =>
       : `${(bytes / 1024 ** 2).toFixed(1)} MB/s`
 
 // "4.31 GHz", or "—" with no reading.
-export const clock = (mhz: number | null | undefined) => (mhz == null ? "—" : `${(mhz / 1000).toFixed(2)} GHz`)
+export const clock = (mhz: number | null | undefined) =>
+  mhz == null ? "—" : `${(mhz / 1000).toFixed(2)} GHz`
 export const rpm = (value: number | null | undefined) =>
   value == null ? "—" : `${Math.round(value).toLocaleString("en-US")} RPM`
 
-const MEMORY_TYPES: Record<number, string> = { 24: "DDR3", 26: "DDR4", 34: "DDR5" }
+const MEMORY_TYPES: Record<number, string> = {
+  24: "DDR3",
+  26: "DDR4",
+  34: "DDR5",
+}
 const ghz = (mhz: number) => `${(mhz / 1000).toFixed(1)} GHz`
 // Joins the parts that are known; `x && "text"` parts drop out when x is missing.
 const join = (...parts: unknown[]) => parts.filter(Boolean).join(" · ")
@@ -42,7 +47,12 @@ export function specLines(specs: Specs | null) {
     ),
     // The long part number last, where truncation cuts it rather than the speed.
     ram: join(
-      [ram?.maker, ram?.sticks && ram.stickBytes && `${ram.sticks}×${Math.round(ram.stickBytes / 1024 ** 3)} GB`]
+      [
+        ram?.maker,
+        ram?.sticks &&
+          ram.stickBytes &&
+          `${ram.sticks}×${Math.round(ram.stickBytes / 1024 ** 3)} GB`,
+      ]
         .filter(Boolean)
         .join(" "),
       ram?.mts && `${type ? `${type}-` : ""}${ram.mts}`,
@@ -57,7 +67,8 @@ export function duration(ms: number) {
   const seconds = Math.max(0, Math.floor(ms / 1000))
   if (seconds < 60) return `${seconds}s`
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`
+  if (minutes < 60)
+    return `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`
 }
 
@@ -67,5 +78,7 @@ export function uptimeText(seconds: number) {
   const hours = String(Math.floor((seconds % 86400) / 3600)).padStart(2, "0")
   const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0")
   const secs = String(Math.floor(seconds % 60)).padStart(2, "0")
-  return days ? `${days}d ${hours}h ${minutes}m ${secs}s` : `${hours}h ${minutes}m ${secs}s`
+  return days
+    ? `${days}d ${hours}h ${minutes}m ${secs}s`
+    : `${hours}h ${minutes}m ${secs}s`
 }

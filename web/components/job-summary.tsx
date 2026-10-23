@@ -15,17 +15,23 @@ const RESULT_ICON: Record<string, React.ReactNode> = {
 function jobTime(job: Job, running: boolean, now: number) {
   // Unknown when the job started before the dashboard did.
   if (!job.startedAt) return null
-  if (running) return <AnimatedNumber value={now - job.startedAt} format={duration} />
+  if (running)
+    return <AnimatedNumber value={now - job.startedAt} format={duration} />
   if (!job.finishedAt) return null
   return (
     <>
-      done in <AnimatedNumber value={job.finishedAt - job.startedAt} format={duration} />
+      done in{" "}
+      <AnimatedNumber
+        value={job.finishedAt - job.startedAt}
+        format={duration}
+      />
     </>
   )
 }
 
 export function PrLink({ job }: { job: Job }) {
-  if (!job.pr || !job.repoUrl) return job.event ? <span>{job.event}</span> : null
+  if (!job.pr || !job.repoUrl)
+    return job.event ? <span>{job.event}</span> : null
   return (
     <a
       href={`${job.repoUrl}/pull/${job.pr}`}
@@ -73,16 +79,29 @@ export function JobSummary({
         <span className="shrink-0">{icon}</span>
         <span className="truncate">
           {job.actor && <span className="font-medium">@{job.actor} </span>}
-          <span className="text-muted-foreground">{job.workflow || job.name}</span>
+          <span className="text-muted-foreground">
+            {job.workflow || job.name}
+          </span>
         </span>
-        {time && <span className="ml-auto shrink-0 text-muted-foreground tabular-nums">{time}</span>}
+        {time && (
+          <span className="ml-auto shrink-0 text-muted-foreground tabular-nums">
+            {time}
+          </span>
+        )}
       </span>
     )
   }
   return (
-    <span className={cn("flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5", className)}>
+    <span
+      className={cn(
+        "flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5",
+        className
+      )}
+    >
       {icon}
-      {job.workflow && <span className="text-muted-foreground">{job.workflow} ›</span>}
+      {job.workflow && (
+        <span className="text-muted-foreground">{job.workflow} ›</span>
+      )}
       <span className="font-medium">{job.name}</span>
       {job.actor && (
         <span className="text-muted-foreground">
@@ -92,7 +111,9 @@ export function JobSummary({
       <span className="text-muted-foreground">
         <PrLink job={job} />
       </span>
-      {time && <span className="text-muted-foreground tabular-nums">({time})</span>}
+      {time && (
+        <span className="text-muted-foreground tabular-nums">({time})</span>
+      )}
     </span>
   )
 }

@@ -1,11 +1,38 @@
-import { Cpu, Fan, Gauge, HardDrive, MemoryStick, Network, Thermometer } from "lucide-react"
+import {
+  Cpu,
+  Fan,
+  Gauge,
+  HardDrive,
+  MemoryStick,
+  Network,
+  Thermometer,
+} from "lucide-react"
 
 import { AnimatedNumber } from "@/components/animated-number"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { celsius, clock, gigabytes, percent, rpm, specLines, speed } from "@/lib/format"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  celsius,
+  clock,
+  gigabytes,
+  percent,
+  rpm,
+  specLines,
+  speed,
+} from "@/lib/format"
 import { runnerColor } from "@/lib/status"
 import type { DashboardState, Runner, Usage } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -16,12 +43,20 @@ function Readings({ mhz, fan }: { mhz?: number | null; fan?: number | null }) {
   return (
     <>
       {mhz != null && (
-        <Badge variant="outline" className="gap-1.5 tabular-nums" aria-label={`Clock ${clock(mhz)}`}>
+        <Badge
+          variant="outline"
+          className="gap-1.5 tabular-nums"
+          aria-label={`Clock ${clock(mhz)}`}
+        >
           <span className="relative flex size-1.5" aria-hidden>
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
             <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
           </span>
-          <AnimatedNumber className="font-semibold text-foreground" value={mhz} format={clock} />
+          <AnimatedNumber
+            className="font-semibold text-foreground"
+            value={mhz}
+            format={clock}
+          />
           <span className="font-normal text-muted-foreground">clock</span>
         </Badge>
       )}
@@ -36,7 +71,8 @@ function Readings({ mhz, fan }: { mhz?: number | null; fan?: number | null }) {
 }
 
 const clamp = (value: number) => Math.min(100, Math.max(0, value))
-const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
+const sum = (values: number[]) =>
+  values.reduce((total, value) => total + value, 0)
 
 type Share = Usage["cpu"]
 
@@ -44,10 +80,21 @@ type Segment = { key: string; label: string; value: number; color: string }
 
 // The machine's use as one stacked bar: each runner's share in its color from the logs
 // (or the runners' total in amber, from an API without the split), then everything else.
-function UsageBar({ used, segments = [], label }: { used: number; segments?: Segment[]; label: string }) {
+function UsageBar({
+  used,
+  segments = [],
+  label,
+}: {
+  used: number
+  segments?: Segment[]
+  label: string
+}) {
   // Each segment's width, cut short so the stack never runs past the machine's total.
   const widths = segments.reduce<number[]>(
-    (done, segment) => [...done, Math.min(clamp(used) - sum(done), Math.max(0, segment.value))],
+    (done, segment) => [
+      ...done,
+      Math.min(clamp(used) - sum(done), Math.max(0, segment.value)),
+    ],
     []
   )
   return (
@@ -67,7 +114,10 @@ function UsageBar({ used, segments = [], label }: { used: number; segments?: Seg
           style={{ width: `${widths[index]}%`, backgroundColor: segment.color }}
         />
       ))}
-      <div className="h-full bg-primary transition-all" style={{ width: `${clamp(used) - sum(widths)}%` }} />
+      <div
+        className="h-full bg-primary transition-all"
+        style={{ width: `${clamp(used) - sum(widths)}%` }}
+      />
     </div>
   )
 }
@@ -101,7 +151,9 @@ function StatCard({
         {spec && (
           <Tooltip>
             <TooltipTrigger
-              render={<p className="w-full cursor-default truncate text-left text-xs text-muted-foreground" />}
+              render={
+                <p className="w-full cursor-default truncate text-left text-xs text-muted-foreground" />
+              }
             >
               {spec}
             </TooltipTrigger>
@@ -147,16 +199,36 @@ function UsageCard({
         value: toPercent(byRunner[position] ?? 0),
         color: runnerColor(position),
       }))
-    : [{ key: "runners", label: `runners: ${format(runners)}`, value: toPercent(runners), color: "var(--color-amber-500)" }]
+    : [
+        {
+          key: "runners",
+          label: `runners: ${format(runners)}`,
+          value: toPercent(runners),
+          color: "var(--color-amber-500)",
+        },
+      ]
   return (
     <StatCard title={title} icon={icon} hint={hint} spec={spec}>
       <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
-        <AnimatedNumber className="font-heading text-2xl font-semibold" value={used} format={format} />
+        <AnimatedNumber
+          className="font-heading text-2xl font-semibold"
+          value={used}
+          format={format}
+        />
         <span className="text-xs text-muted-foreground">
-          runners <AnimatedNumber className="font-medium text-amber-600 dark:text-amber-400" value={runners} format={format} />
+          runners{" "}
+          <AnimatedNumber
+            className="font-medium text-amber-600 dark:text-amber-400"
+            value={runners}
+            format={format}
+          />
         </span>
       </div>
-      <UsageBar label={`${title} use`} used={toPercent(used)} segments={segments} />
+      <UsageBar
+        label={`${title} use`}
+        used={toPercent(used)}
+        segments={segments}
+      />
       {maxUsed !== undefined && maxRunners !== undefined && (
         // Peaks this session, each with a dot in its color from the bar and the line above.
         <div className="flex items-center gap-3 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
@@ -164,12 +236,20 @@ function UsageCard({
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-primary" aria-hidden />
             all
-            <AnimatedNumber className="font-semibold text-foreground" value={maxUsed} format={format} />
+            <AnimatedNumber
+              className="font-semibold text-foreground"
+              value={maxUsed}
+              format={format}
+            />
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
             runners
-            <AnimatedNumber className="font-semibold text-amber-600 dark:text-amber-400" value={maxRunners} format={format} />
+            <AnimatedNumber
+              className="font-semibold text-amber-600 dark:text-amber-400"
+              value={maxRunners}
+              format={format}
+            />
           </span>
         </div>
       )}
@@ -197,15 +277,23 @@ function RangeCard({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="h-7 px-0" />
-            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">now</TableHead>
-            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">min</TableHead>
-            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">max</TableHead>
+            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">
+              now
+            </TableHead>
+            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">
+              min
+            </TableHead>
+            <TableHead className="h-7 px-0 text-right font-normal text-muted-foreground">
+              max
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map(({ label, key, value }) => (
             <TableRow key={key} className="border-0">
-              <TableCell className="px-0 py-1 text-muted-foreground">{label}</TableCell>
+              <TableCell className="px-0 py-1 text-muted-foreground">
+                {label}
+              </TableCell>
               <TableCell className="px-0 py-1 text-right text-sm font-medium">
                 <AnimatedNumber value={value} format={format} />
               </TableCell>
@@ -226,10 +314,20 @@ function RangeCard({
 // A grid above the logs (see Dashboard): two cards per row from sm up, three from lg.
 export const STAT_GRID = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
 
-export function StatCards({ state, className }: { state: DashboardState; className?: string }) {
+export function StatCards({
+  state,
+  className,
+}: {
+  state: DashboardState
+  className?: string
+}) {
   const { usage, peak, range } = state
   if (!usage) {
-    return <p className={cn("text-sm text-muted-foreground", className)}>Sampling usage…</p>
+    return (
+      <p className={cn("text-sm text-muted-foreground", className)}>
+        Sampling usage…
+      </p>
+    )
   }
   const usedDisk = usage.disk.total - usage.disk.free
   const specs = specLines(state.specs)
@@ -255,7 +353,10 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
       <UsageCard
         title="RAM"
         icon={MemoryStick}
-        hint={[state.specs?.ram?.mts && `${state.specs.ram.mts} MT/s`, `of ${gigabytes(usage.ram.total)}`]
+        hint={[
+          state.specs?.ram?.mts && `${state.specs.ram.mts} MT/s`,
+          `of ${gigabytes(usage.ram.total)}`,
+        ]
           .filter(Boolean)
           .join(" · ")}
         spec={specs.ram}
@@ -285,7 +386,11 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         rows={[
           { label: "CPU", key: "temp.cpu", value: usage.temp.cpu },
           { label: "GPU", key: "temp.gpu", value: usage.temp.gpu },
-          { label: "Hot spot", key: "temp.gpuHotSpot", value: usage.temp.gpuHotSpot },
+          {
+            label: "Hot spot",
+            key: "temp.gpuHotSpot",
+            value: usage.temp.gpuHotSpot,
+          },
           { label: "RAM", key: "temp.ram", value: usage.temp.ram ?? null },
           { label: "SSD", key: "temp.ssd", value: usage.temp.ssd },
         ]}
@@ -307,18 +412,29 @@ export function StatCards({ state, className }: { state: DashboardState; classNa
         spec={specs.disk}
       >
         <div className="flex items-baseline justify-between gap-2">
-          <AnimatedNumber className="font-heading text-2xl font-semibold" value={usage.disk.free} format={gigabytes} />
+          <AnimatedNumber
+            className="font-heading text-2xl font-semibold"
+            value={usage.disk.free}
+            format={gigabytes}
+          />
           <span className="text-xs text-muted-foreground">free</span>
         </div>
-        <UsageBar label="Disk space used" used={(usedDisk / usage.disk.total) * 100} />
+        <UsageBar
+          label="Disk space used"
+          used={(usedDisk / usage.disk.total) * 100}
+        />
         <p className="flex justify-between gap-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
           <span>
-            <AnimatedNumber value={(usedDisk / usage.disk.total) * 100} format={percent} /> used
+            <AnimatedNumber
+              value={(usedDisk / usage.disk.total) * 100}
+              format={percent}
+            />{" "}
+            used
           </span>
           {usage.disk.read != null && (
             <span>
-              Read <AnimatedNumber value={usage.disk.read} format={speed} /> · Write{" "}
-              <AnimatedNumber value={usage.disk.write} format={speed} />
+              Read <AnimatedNumber value={usage.disk.read} format={speed} /> ·
+              Write <AnimatedNumber value={usage.disk.write} format={speed} />
             </span>
           )}
         </p>

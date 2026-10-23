@@ -1,7 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Clock, Moon, PowerOff, RotateCw, Sun, TriangleAlert } from "lucide-react"
+import {
+  Clock,
+  Moon,
+  PowerOff,
+  RotateCw,
+  Sun,
+  TriangleAlert,
+} from "lucide-react"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
 
@@ -12,9 +19,20 @@ import { STAT_GRID, StatCards } from "@/components/stat-cards"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { type Connection, useDashboard } from "@/hooks/use-dashboard"
 import { AnimatedNumber } from "@/components/animated-number"
@@ -53,7 +71,12 @@ function ConnectionBadge({ connection }: { connection: Connection }) {
         {connection === "open" && (
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
         )}
-        <span className={cn("relative inline-flex size-2 rounded-full", CONNECTION_STYLE[connection].dot)} />
+        <span
+          className={cn(
+            "relative inline-flex size-2 rounded-full",
+            CONNECTION_STYLE[connection].dot
+          )}
+        />
       </span>
       {CONNECTION_STYLE[connection].label}
     </Badge>
@@ -63,16 +86,25 @@ function ConnectionBadge({ connection }: { connection: Connection }) {
 // The PC's uptime, beside the theme toggle.
 function Uptime({ uptime }: { uptime: number }) {
   return (
-    <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground" title="PC uptime">
+    <span
+      className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground"
+      title="PC uptime"
+    >
       <Clock className="size-4" />
       <span className="hidden sm:inline">PC uptime</span>
-      <AnimatedNumber className="font-semibold text-foreground" value={uptime} format={uptimeText} />
+      <AnimatedNumber
+        className="font-semibold text-foreground"
+        value={uptime}
+        format={uptimeText}
+      />
     </span>
   )
 }
 
 async function restartRunner(runner: Runner) {
-  const response = await fetch(`/api/runners/${runner.number}/restart`, { method: "POST" })
+  const response = await fetch(`/api/runners/${runner.number}/restart`, {
+    method: "POST",
+  })
   const body = await response.json().catch(() => ({}))
   if (response.ok) toast.success(`Restarting ${runner.label}`)
   else toast.error(body.error ?? `Couldn't restart ${runner.label}`)
@@ -90,11 +122,20 @@ function Offline() {
         <EmptyMedia variant="icon">
           <PowerOff />
         </EmptyMedia>
-        <EmptyTitle>{OWNER === "the owner" ? "The runners are offline" : `${OWNER}'s runners are offline`}</EmptyTitle>
+        <EmptyTitle>
+          {OWNER === "the owner"
+            ? "The runners are offline"
+            : `${OWNER}'s runners are offline`}
+        </EmptyTitle>
         <EmptyDescription>
-          Jobs for these runners wait in GitHub&apos;s queue until they&apos;re back. Ping {OWNER} to turn them on.
+          Jobs for these runners wait in GitHub&apos;s queue until they&apos;re
+          back. Ping {OWNER} to turn them on.
         </EmptyDescription>
-        {HOURS && <EmptyDescription className="font-medium text-foreground">{HOURS}</EmptyDescription>}
+        {HOURS && (
+          <EmptyDescription className="font-medium text-foreground">
+            {HOURS}
+          </EmptyDescription>
+        )}
       </EmptyHeader>
       <EmptyContent className="text-xs text-muted-foreground">
         This page reconnects on its own once they&apos;re up.
@@ -113,9 +154,11 @@ export function Dashboard() {
   const [selected, setSelected] = React.useState(0)
 
   const runners = React.useMemo(() => state?.runners ?? [], [state])
-  const runner = runners.find((candidate) => candidate.number === selected) ?? null
+  const runner =
+    runners.find((candidate) => candidate.number === selected) ?? null
   const viewLines = React.useMemo(
-    () => (selected === 0 ? lines : lines.filter((line) => line.runner === selected)),
+    () =>
+      selected === 0 ? lines : lines.filter((line) => line.runner === selected),
     [lines, selected]
   )
 
@@ -125,13 +168,17 @@ export function Dashboard() {
   )
   const tagFor = React.useCallback(
     (line: Line) => (
-      <span style={{ color: runnerColor(positions.get(line.runner) ?? 0) }}>[runner {line.runner}] </span>
+      <span style={{ color: runnerColor(positions.get(line.runner) ?? 0) }}>
+        [runner {line.runner}]{" "}
+      </span>
     ),
     [positions]
   )
 
   return (
-    <SidebarProvider style={{ "--sidebar-width": "19rem" } as React.CSSProperties}>
+    <SidebarProvider
+      style={{ "--sidebar-width": "19rem" } as React.CSSProperties}
+    >
       <RunnerSidebar
         state={state}
         selected={selected}
@@ -142,7 +189,10 @@ export function Dashboard() {
         {/* On phones the status and theme toggle go on a row under the title. */}
         <header className="flex shrink-0 items-start gap-2 border-b px-4 py-3 sm:items-center">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mt-1.5 mr-1 h-4 sm:mt-0" />
+          <Separator
+            orientation="vertical"
+            className="mt-1.5 mr-1 h-4 sm:mt-0"
+          />
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <div className="flex items-center gap-2">
@@ -151,21 +201,38 @@ export function Dashboard() {
                 </h1>
                 <ConnectionBadge connection={connection} />
                 {runner && (
-                  <Badge variant="outline" className={cn("shrink-0", STATUS_STYLE[runner.status].text)}>
-                    <span className={cn("size-1.5 rounded-full", STATUS_STYLE[runner.status].dot)} />
+                  <Badge
+                    variant="outline"
+                    className={cn("shrink-0", STATUS_STYLE[runner.status].text)}
+                  >
+                    <span
+                      className={cn(
+                        "size-1.5 rounded-full",
+                        STATUS_STYLE[runner.status].dot
+                      )}
+                    />
                     {runner.status}
                   </Badge>
                 )}
                 {runner && (
-                  <span className="hidden min-w-0 truncate text-xs text-muted-foreground sm:inline">{runner.name}</span>
+                  <span className="hidden min-w-0 truncate text-xs text-muted-foreground sm:inline">
+                    {runner.name}
+                  </span>
                 )}
               </div>
               {/* On phones the runner's name gets its own line rather than a sliver beside the title. */}
-              {runner && <p className="truncate text-xs text-muted-foreground sm:hidden">{runner.name}</p>}
+              {runner && (
+                <p className="truncate text-xs text-muted-foreground sm:hidden">
+                  {runner.name}
+                </p>
+              )}
               {runner ? (
                 <JobSummary runner={runner} now={now} className="text-xs" />
               ) : (
-                <p className="hidden text-xs text-muted-foreground sm:block">Every runner&apos;s output as it happens. Pick one on the left to see only its logs.</p>
+                <p className="hidden text-xs text-muted-foreground sm:block">
+                  Every runner&apos;s output as it happens. Pick one on the left
+                  to see only its logs.
+                </p>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -185,34 +252,36 @@ export function Dashboard() {
           <Alert className="mx-4 mt-4 w-auto">
             <TriangleAlert />
             <AlertTitle>Stopping the runners</AlertTitle>
-            <AlertDescription>Waiting for each runner to end its GitHub session.</AlertDescription>
+            <AlertDescription>
+              Waiting for each runner to end its GitHub session.
+            </AlertDescription>
           </Alert>
         )}
 
         {connection === "closed" ? (
           <Offline />
         ) : (
-        /* Stats above the logs. */
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-          <div className="shrink-0">
-            {state ? (
-              <StatCards state={state} />
-            ) : (
-              <div className={STAT_GRID}>
-                {Array.from({ length: 6 }, (_, index) => (
-                  <Skeleton key={index} className="h-32 rounded-4xl" />
-                ))}
-              </div>
-            )}
+          /* Stats above the logs. */
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+            <div className="shrink-0">
+              {state ? (
+                <StatCards state={state} />
+              ) : (
+                <div className={STAT_GRID}>
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <Skeleton key={index} className="h-32 rounded-4xl" />
+                  ))}
+                </div>
+              )}
+            </div>
+            <LogView
+              key={selected}
+              title={runner ? `${runner.label} output` : "All runners' output"}
+              lines={viewLines}
+              tagFor={selected === 0 ? tagFor : undefined}
+              className="min-h-96 flex-1"
+            />
           </div>
-          <LogView
-            key={selected}
-            title={runner ? `${runner.label} output` : "All runners' output"}
-            lines={viewLines}
-            tagFor={selected === 0 ? tagFor : undefined}
-            className="min-h-96 flex-1"
-          />
-        </div>
         )}
       </SidebarInset>
     </SidebarProvider>

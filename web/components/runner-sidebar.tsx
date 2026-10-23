@@ -40,14 +40,17 @@ export function RunnerSidebar({
     onSelect(view)
     if (isMobile) setOpenMobile(false)
   }
-  const count = (status: string) => runners.filter((runner) => runner.status === status).length
+  const count = (status: string) =>
+    runners.filter((runner) => runner.status === status).length
 
   return (
     <Sidebar>
       <SidebarHeader className="gap-1 px-4 pt-4">
         <div className="flex items-center gap-2">
           <Server className="size-4" />
-          <span className="font-heading text-sm font-semibold">Actions runners</span>
+          <span className="font-heading text-sm font-semibold">
+            Actions runners
+          </span>
         </div>
         <p className="text-xs text-muted-foreground">
           <AnimatedNumber value={count("busy")} format={String} /> busy ·{" "}
@@ -61,7 +64,10 @@ export function RunnerSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive={selected === 0} onClick={() => pick(0)}>
+                <SidebarMenuButton
+                  isActive={selected === 0}
+                  onClick={() => pick(0)}
+                >
                   <Layers />
                   <span>All runners</span>
                 </SidebarMenuButton>
@@ -84,11 +90,23 @@ export function RunnerSidebar({
                       className="h-auto flex-col items-stretch gap-1 py-2"
                     >
                       <span className="flex items-center gap-2">
-                        <span className={cn("size-2 shrink-0 rounded-full", style.dot)} />
+                        <span
+                          className={cn(
+                            "size-2 shrink-0 rounded-full",
+                            style.dot
+                          )}
+                        />
                         <span className="font-medium">{runner.label}</span>
-                        <span className={cn("ml-auto text-xs", style.text)}>{runner.status}</span>
+                        <span className={cn("ml-auto text-xs", style.text)}>
+                          {runner.status}
+                        </span>
                       </span>
-                      <JobSummary runner={runner} now={now} compact className="pl-4 text-xs" />
+                      <JobSummary
+                        runner={runner}
+                        now={now}
+                        compact
+                        className="pl-4 text-xs"
+                      />
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )

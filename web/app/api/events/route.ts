@@ -8,7 +8,8 @@ export async function GET(request: Request) {
       signal: request.signal,
       cache: "no-store",
     })
-    if (!upstream.ok || !upstream.body) throw new Error(`HTTP ${upstream.status}`)
+    if (!upstream.ok || !upstream.body)
+      throw new Error(`HTTP ${upstream.status}`)
     return new Response(upstream.body, {
       headers: {
         "Content-Type": "text/event-stream",
@@ -17,6 +18,9 @@ export async function GET(request: Request) {
       },
     })
   } catch {
-    return Response.json({ error: "The runners aren't running" }, { status: 503 })
+    return Response.json(
+      { error: "The runners aren't running" },
+      { status: 503 }
+    )
   }
 }

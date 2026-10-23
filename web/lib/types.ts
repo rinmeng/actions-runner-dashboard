@@ -59,7 +59,13 @@ export type Usage = {
   ram: Share & { total: number }
   gpu: Share
   // Read and write rates in bytes per second; null without LibreHardwareMonitor.
-  disk: { drive: string; free: number; total: number; read: number | null; write: number | null }
+  disk: {
+    drive: string
+    free: number
+    total: number
+    read: number | null
+    write: number | null
+  }
   net: { down: number; up: number }
   // MHz and RPM; null without LibreHardwareMonitor or a sensor for it. Older APIs leave them out.
   clock?: { cpu: number | null; gpu: number | null }
