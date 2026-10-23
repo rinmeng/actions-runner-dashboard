@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Library components (shadcn/ui) are generated via their CLI
+    "components/ui/**",
+    "hooks/use-mobile.ts",
   ]),
 ]);
 
