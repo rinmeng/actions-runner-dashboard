@@ -1,4 +1,7 @@
+
 # actions-runner-dashboard
+
+<img width="1440" height="753" alt="Screenshot 2026-10-28 at 12 42 10 PM" src="https://github.com/user-attachments/assets/6b069daa-5e52-4ca0-985b-f94071bf794d" />
 
 Set up and run several self-hosted GitHub Actions runners on one Windows machine,
 watched from a terminal dashboard or a web dashboard. The runners and the terminal
